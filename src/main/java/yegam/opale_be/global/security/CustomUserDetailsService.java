@@ -1,7 +1,7 @@
-package yegam.userservice.global.security;
+package yegam.opale_be.global.security;
 
-import yegam.userservice.domain.user.entity.User;
-import yegam.userservice.domain.user.repository.UserRepository;
+import yegam.opale_be.domain.user.entity.User;
+import yegam.opale_be.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

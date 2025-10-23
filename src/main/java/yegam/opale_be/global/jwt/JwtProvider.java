@@ -1,12 +1,12 @@
-package yegam.userservice.global.jwt;
+package yegam.opale_be.global.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import yegam.userservice.global.exception.CustomException;
-import yegam.userservice.global.exception.GlobalErrorCode;
+import yegam.opale_be.global.exception.CustomException;
+import yegam.opale_be.global.exception.GlobalErrorCode;
 
 import java.security.Key;
 import java.util.Base64;

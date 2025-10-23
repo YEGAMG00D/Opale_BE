@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.controller;
+package yegam.opale_be.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -7,13 +7,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import yegam.userservice.domain.user.dto.request.*;
-import yegam.userservice.domain.user.dto.response.UserResponseDto;
-import yegam.userservice.domain.user.service.UserService;
-import yegam.userservice.global.exception.CustomException;
-import yegam.userservice.global.exception.GlobalErrorCode;
-import yegam.userservice.global.response.BaseResponse;
-import yegam.userservice.global.security.CustomUserDetails;
+import yegam.opale_be.domain.user.dto.request.*;
+import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.service.UserService;
+import yegam.opale_be.global.exception.CustomException;
+import yegam.opale_be.global.exception.GlobalErrorCode;
+import yegam.opale_be.global.response.BaseResponse;
+import yegam.opale_be.global.security.CustomUserDetails;
 
 @RestController
 @RequestMapping("/api/users")

@@ -1,4 +1,4 @@
-package yegam.userservice.global.jwt;
+package yegam.opale_be.global.jwt;
 
 import lombok.*;
 

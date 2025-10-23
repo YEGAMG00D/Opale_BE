@@ -1,9 +1,9 @@
-package yegam.userservice.domain.user.dto.response;
+package yegam.opale_be.domain.user.dto.response;
 
 import lombok.*;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
-import yegam.userservice.domain.user.entity.User;
+import yegam.opale_be.domain.user.entity.User;
 
 @Getter
 @Setter

@@ -1,4 +1,4 @@
-package yegam.userservice.global.exception.model;
+package yegam.opale_be.global.exception.model;
 
 import org.springframework.http.HttpStatus;
 

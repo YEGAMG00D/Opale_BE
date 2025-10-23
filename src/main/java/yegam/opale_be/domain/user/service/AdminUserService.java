@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.service;
+package yegam.opale_be.domain.user.service;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yegam.userservice.domain.user.dto.response.UserResponseDto;
-import yegam.userservice.domain.user.entity.User;
-import yegam.userservice.domain.user.exception.UserErrorCode;
-import yegam.userservice.domain.user.mapper.UserMapper;
-import yegam.userservice.domain.user.repository.UserRepository;
-import yegam.userservice.global.exception.CustomException;
+import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.entity.User;
+import yegam.opale_be.domain.user.exception.UserErrorCode;
+import yegam.opale_be.domain.user.mapper.UserMapper;
+import yegam.opale_be.domain.user.repository.UserRepository;
+import yegam.opale_be.global.exception.CustomException;
 
 @Service
 @Slf4j

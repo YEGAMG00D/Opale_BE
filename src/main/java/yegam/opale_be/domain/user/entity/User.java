@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.entity;
+package yegam.opale_be.domain.user.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -8,7 +8,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.UUID;
-import yegam.userservice.global.common.BaseTimeEntity;
+import yegam.opale_be.global.common.BaseTimeEntity;
 
 @Entity
 @Table(

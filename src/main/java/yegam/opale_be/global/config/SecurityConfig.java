@@ -1,7 +1,7 @@
-package yegam.userservice.global.config;
+package yegam.opale_be.global.config;
 
 
-import yegam.userservice.global.security.JwtAuthenticationFilter;
+import yegam.opale_be.global.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

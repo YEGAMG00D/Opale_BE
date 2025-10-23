@@ -1,7 +1,7 @@
-package yegam.userservice.global.exception;
+package yegam.opale_be.global.exception;
 
-import yegam.userservice.global.exception.model.BaseErrorCode;
-import yegam.userservice.global.response.BaseResponse;
+import yegam.opale_be.global.exception.model.BaseErrorCode;
+import yegam.opale_be.global.response.BaseResponse;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;

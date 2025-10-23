@@ -1,6 +1,6 @@
-package yegam.userservice.domain.user.exception;
+package yegam.opale_be.domain.user.exception;
 
-import yegam.userservice.global.exception.model.BaseErrorCode;
+import yegam.opale_be.global.exception.model.BaseErrorCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;

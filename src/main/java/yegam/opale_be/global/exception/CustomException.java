@@ -1,6 +1,6 @@
-package yegam.userservice.global.exception;
+package yegam.opale_be.global.exception;
 
-import yegam.userservice.global.exception.model.BaseErrorCode;
+import yegam.opale_be.global.exception.model.BaseErrorCode;
 import lombok.Getter;
 
 @Getter

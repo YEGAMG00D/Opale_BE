@@ -1,8 +1,8 @@
-package yegam.userservice.domain.user.mapper;
+package yegam.opale_be.domain.user.mapper;
 
 import org.springframework.stereotype.Component;
-import yegam.userservice.domain.user.dto.response.UserResponseDto;
-import yegam.userservice.domain.user.entity.User;
+import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.entity.User;
 
 @Component
 public class UserMapper {

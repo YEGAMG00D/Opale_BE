@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.service;
+package yegam.opale_be.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,13 +9,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yegam.userservice.domain.user.dto.request.LoginRequestDto;
-import yegam.userservice.domain.user.entity.User;
-import yegam.userservice.domain.user.exception.UserErrorCode;
-import yegam.userservice.domain.user.repository.UserRepository;
-import yegam.userservice.global.exception.CustomException;
-import yegam.userservice.global.jwt.JwtProvider;
-import yegam.userservice.global.jwt.TokenResponse;
+import yegam.opale_be.domain.user.dto.request.LoginRequestDto;
+import yegam.opale_be.domain.user.entity.User;
+import yegam.opale_be.domain.user.exception.UserErrorCode;
+import yegam.opale_be.domain.user.repository.UserRepository;
+import yegam.opale_be.global.exception.CustomException;
+import yegam.opale_be.global.jwt.JwtProvider;
+import yegam.opale_be.global.jwt.TokenResponse;
 
 import java.util.HashSet;
 import java.util.Set;

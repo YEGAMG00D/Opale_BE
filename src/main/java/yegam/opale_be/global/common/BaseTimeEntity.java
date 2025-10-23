@@ -1,4 +1,4 @@
-package yegam.userservice.global.common;
+package yegam.opale_be.global.common;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;

@@ -1,6 +1,6 @@
-package yegam.userservice.global.security;
+package yegam.opale_be.global.security;
 
-import yegam.userservice.domain.user.entity.User;
+import yegam.opale_be.domain.user.entity.User;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;

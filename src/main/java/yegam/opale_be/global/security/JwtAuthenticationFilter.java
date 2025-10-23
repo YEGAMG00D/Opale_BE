@@ -1,4 +1,4 @@
-package yegam.userservice.global.security;
+package yegam.opale_be.global.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,7 +13,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import yegam.userservice.global.jwt.JwtProvider;
+import yegam.opale_be.global.jwt.JwtProvider;
 
 import java.io.IOException;
 

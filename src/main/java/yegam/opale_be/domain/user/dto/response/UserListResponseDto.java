@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.dto.response;
+package yegam.opale_be.domain.user.dto.response;
 
 import java.util.List;
 import lombok.AllArgsConstructor;

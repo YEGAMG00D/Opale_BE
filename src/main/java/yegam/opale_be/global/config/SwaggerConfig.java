@@ -1,4 +1,4 @@
-package yegam.userservice.global.config;
+package yegam.opale_be.global.config;
 
 
 import io.swagger.v3.oas.models.Components;

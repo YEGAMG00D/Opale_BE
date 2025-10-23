@@ -1,7 +1,7 @@
-package yegam.userservice.domain.user.repository;
+package yegam.opale_be.domain.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import yegam.userservice.domain.user.entity.User;
+import yegam.opale_be.domain.user.entity.User;
 
 import java.util.Optional;
 

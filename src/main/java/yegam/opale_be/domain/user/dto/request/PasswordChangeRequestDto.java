@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.dto.request;
+package yegam.opale_be.domain.user.dto.request;
 
 import jakarta.validation.constraints.*;
 import lombok.*;

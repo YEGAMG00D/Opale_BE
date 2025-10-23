@@ -1,4 +1,4 @@
-package yegam.userservice.global.response;
+package yegam.opale_be.global.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

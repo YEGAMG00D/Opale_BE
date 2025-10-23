@@ -1,4 +1,4 @@
-package yegam.userservice.domain.user.controller;
+package yegam.opale_be.domain.user.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import yegam.userservice.domain.user.dto.response.UserResponseDto;
-import yegam.userservice.domain.user.service.AdminUserService;
-import yegam.userservice.global.response.BaseResponse;
+import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.service.AdminUserService;
+import yegam.opale_be.global.response.BaseResponse;
 
 import java.util.List;
 
