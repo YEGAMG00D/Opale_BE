@@ -4,20 +4,19 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
-import java.time.LocalDateTime;
-import java.time.LocalDate;
-import java.util.UUID;
 import yegam.opale_be.global.common.BaseTimeEntity;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
     name = "users",
-    indexes = {
-        @Index(name = "idx_nickname", columnList = "nickname")
-    },
     uniqueConstraints = {
         @UniqueConstraint(name = "uk_email", columnNames = "email")
+    },
+    indexes = {
+        @Index(name = "idx_nickname", columnList = "nickname")
     }
 )
 @Getter
@@ -28,36 +27,37 @@ import yegam.opale_be.global.common.BaseTimeEntity;
 public class User extends BaseTimeEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  @Column(name = "user_id")
-  private Long id;
+  @Column(name = "user_id", length = 20)
+  private String userId;
 
-  @Column(nullable = false, unique = true)
+  @Column(nullable = false, unique = true, length = 255)
   private String email;
 
-  @Column(nullable = false)
+  @Column(nullable = false, length = 255)
   private String password;
 
-  @Column
+  @Column(length = 50)
   private String name;
 
-  @Column
   private LocalDate birth;
 
-  @Column
+  @Column(length = 10)
   private String gender;
 
-  @Column
+  @Column(length = 20)
   private String phone;
 
-  @Column
-  private String address;
+  @Column(length = 255)
+  private String address1;
 
-  @Column(nullable = false)
+  @Column(length = 255)
+  private String address2;
+
+  @Column(length = 50)
   private String nickname;
 
   @Enumerated(EnumType.STRING)
-  @Column(nullable = false)
+  @Column(nullable = false, length = 10)
   private Role role = Role.USER;
 
   @Column(nullable = false)
@@ -65,21 +65,10 @@ public class User extends BaseTimeEntity {
 
   private LocalDateTime deletedAt;
 
-  @Column(nullable = false, unique = true, length = 36)
-  private String uuid = UUID.randomUUID().toString();
-
-
   @PrePersist
   public void prePersist() {
-    if (uuid == null) {
-      uuid = UUID.randomUUID().toString();
-    }
-    if (role == null) {
-      role = Role.USER;
-    }
-    if (isDeleted == null) {
-      isDeleted = false;
-    }
+    if (role == null) role = Role.USER;
+    if (isDeleted == null) isDeleted = false;
   }
 
   public enum Role {

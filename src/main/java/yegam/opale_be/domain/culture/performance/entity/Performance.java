@@ -1,4 +1,4 @@
-package yegam.opale_be.domain.culture.entity;
+package yegam.opale_be.domain.culture.performance.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

@@ -1,4 +1,4 @@
-package yegam.opale_be.domain.culture.entity;
+package yegam.opale_be.domain.culture.performance.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,7 +21,7 @@ public class PerformanceVideo extends BaseTimeEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "performance_id", nullable = false,
       foreignKey = @ForeignKey(name = "fk_perf_video_performance"))
-  private Performance performance;
+  private yegam.opale_be.domain.culture.performance.entity.Performance performance;
 
   @Column(name = "youtube_video_id", length = 50)
   private String youtubeVideoId;
