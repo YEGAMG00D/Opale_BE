@@ -53,7 +53,7 @@ public class AdminUserController {
   @GetMapping("/users/{userId}")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<BaseResponse<UserResponseDto>> getUserById(
-      @Parameter(description = "사용자 ID", example = "u_1a2b3c")
+      @Parameter(description = "사용자 userId", example = "1")
       @PathVariable Long userId
   ) {
     UserResponseDto user = adminUserService.getUserById(userId);

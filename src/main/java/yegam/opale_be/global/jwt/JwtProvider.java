@@ -86,4 +86,20 @@ public class JwtProvider {
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
   }
+
+  public String extractUserRole(String token) {
+    try {
+      return Jwts.parserBuilder()
+          .setSigningKey(key)
+          .build()
+          .parseClaimsJws(token)
+          .getBody()
+          .get("role", String.class);
+    } catch (Exception e) {
+      throw new CustomException(GlobalErrorCode.JWT_INVALID);
+    }
+  }
+
+
+
 }

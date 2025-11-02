@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
@@ -14,6 +15,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import yegam.opale_be.global.jwt.JwtProvider;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -34,10 +37,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (token != null) {
       try {
         jwtProvider.validateTokenOrThrow(token);
+
         Long userId = jwtProvider.extractUserIdAsLong(token);
+        String role = jwtProvider.extractUserRole(token); // ✅ 추가된 부분
+
+        // ✅ Spring Security용 권한 리스트 생성
+        List<SimpleGrantedAuthority> authorities = Collections.singletonList(
+            new SimpleGrantedAuthority(role)
+        );
 
         UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(userId, null, null);
+            new UsernamePasswordAuthenticationToken(userId, null, authorities);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
