@@ -10,6 +10,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(title = "UserSignUpRequest DTO", description = "회원가입을 위한 데이터 전송")
 public class UserSignUpRequestDto {
 
   @Schema(description = "이메일 주소", example = "user@example.com")
@@ -20,6 +21,10 @@ public class UserSignUpRequestDto {
   @Schema(description = "비밀번호", example = "qqqq1234!")
   @NotBlank(message = "비밀번호는 필수 입력값입니다.")
   @Size(min = 8, message = "비밀번호는 8자 이상이어야 합니다.")
+  @Pattern(
+      regexp = "^(?=.*[A-Za-z])(?=.*\\d)(?=.*[!@#$%^&*()_+\\-=]).{8,}$",
+      message = "비밀번호는 영문, 숫자, 특수문자를 포함해야 합니다."
+  )
   private String password;
 
   @Schema(description = "성명", example = "김유저")
@@ -37,11 +42,16 @@ public class UserSignUpRequestDto {
   private String phone;
 
   @Schema(description = "주소", example = "서울특별시 강남구 테헤란로 123")
-  private String address;
+  private String address1;
+
+  @Schema(description = "주소", example = "큰길타워 301호")
+  private String address2;
 
   @Schema(description = "닉네임", example = "집이대학로")
   @NotBlank(message = "닉네임은 필수 입력값입니다.")
+  @Size(min = 2, max = 10, message = "닉네임은 2자 이상 10자 이하로 입력해야 합니다.")
   private String nickname;
+
 
 
 

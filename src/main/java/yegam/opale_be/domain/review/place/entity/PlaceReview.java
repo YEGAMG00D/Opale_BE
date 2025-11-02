@@ -34,6 +34,7 @@ public class PlaceReview extends BaseTimeEntity {
   @Column(name = "rating")
   private Float rating;
 
+  @Builder.Default
   @Column(name = "is_deleted")
   private Boolean isDeleted = false;
 

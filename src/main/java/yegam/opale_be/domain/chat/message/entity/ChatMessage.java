@@ -39,8 +39,9 @@ public class ChatMessage {
   @Column(name = "created_at")
   private LocalDateTime createdAt;
 
+  @Builder.Default
   @Column(name = "is_deleted")
-  private Boolean isDeleted;
+  private Boolean isDeleted = false;
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;

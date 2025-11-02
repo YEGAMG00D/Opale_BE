@@ -31,6 +31,7 @@ public class JwtProvider {
     this.refreshTokenExpireTime = refreshTokenExpireTime;
   }
 
+  /** ✅ 토큰 유효성 검증 */
   public void validateTokenOrThrow(String token) {
     try {
       Jwts.parserBuilder()
@@ -46,36 +47,59 @@ public class JwtProvider {
     }
   }
 
-  public String extractUserId(String token) {
-    return Jwts.parserBuilder()
-        .setSigningKey(key)
-        .build()
-        .parseClaimsJws(token)
-        .getBody()
-        .getSubject();
+  /** ✅ 사용자 ID(Long) 추출 */
+  public Long extractUserIdAsLong(String token) {
+    try {
+      return Long.parseLong(
+          Jwts.parserBuilder()
+              .setSigningKey(key)
+              .build()
+              .parseClaimsJws(token)
+              .getBody()
+              .getSubject()
+      );
+    } catch (Exception e) {
+      throw new CustomException(GlobalErrorCode.JWT_INVALID);
+    }
   }
 
-  public String createAccessToken(String userId, String email, String role) {
+  /** ✅ AccessToken 생성 */
+  public String createAccessToken(Long userId, String email, String role) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + accessTokenExpireTime);
     return Jwts.builder()
-        .setSubject(userId)
+        .setSubject(String.valueOf(userId))
         .claim("email", email)
-        .claim("role", role)
+        .claim("role", role) // ROLE_ 붙이지 않음
         .setIssuedAt(now)
         .setExpiration(expiry)
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
   }
 
-  public String createRefreshToken(String userId) {
+  /** ✅ RefreshToken 생성 */
+  public String createRefreshToken(Long userId) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + refreshTokenExpireTime);
     return Jwts.builder()
-        .setSubject(userId)
+        .setSubject(String.valueOf(userId))
         .setIssuedAt(now)
         .setExpiration(expiry)
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
+  }
+
+  /** ✅ 역할(Role) 추출 */
+  public String extractUserRole(String token) {
+    try {
+      return Jwts.parserBuilder()
+          .setSigningKey(key)
+          .build()
+          .parseClaimsJws(token)
+          .getBody()
+          .get("role", String.class);
+    } catch (Exception e) {
+      throw new CustomException(GlobalErrorCode.JWT_INVALID);
+    }
   }
 }

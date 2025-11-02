@@ -9,6 +9,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(title = "LoginRequest DTO", description = "로그인을 위한 데이터 전송")
 public class LoginRequestDto {
 
   @Schema(description = "이메일 주소", example = "user@example.com")
