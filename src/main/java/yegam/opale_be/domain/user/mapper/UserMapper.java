@@ -1,9 +1,7 @@
 package yegam.opale_be.domain.user.mapper;
 
 import org.springframework.stereotype.Component;
-import yegam.opale_be.domain.user.dto.response.UserResponseDto;
-import yegam.opale_be.domain.user.dto.response.UserListResponseDto;
-import yegam.opale_be.domain.user.dto.response.CheckNicknameResponseDto;
+import yegam.opale_be.domain.user.dto.response.*;
 import yegam.opale_be.domain.user.entity.User;
 
 import java.util.List;
@@ -16,7 +14,30 @@ import java.util.stream.Collectors;
 @Component
 public class UserMapper {
 
-  /** 단일 사용자 Entity → UserResponseDto 변환 */
+  /** ✅ 관리자용: 단일 사용자 Entity → AdminUserResponseDto 변환 */
+  public AdminUserResponseDto toAdminUserResponseDto(User user) {
+    if (user == null) return null;
+
+    return AdminUserResponseDto.builder()
+        .userId(user.getUserId())
+        .email(user.getEmail())
+        .name(user.getName())
+        .nickname(user.getNickname())
+        .birth(user.getBirth())
+        .role(user.getRole().name())
+        .isDeleted(user.getIsDeleted())
+        .createdAt(user.getCreatedAt())
+        .build();
+  }
+
+  /** ✅ 관리자용: 전체 사용자 목록 Entity List → AdminUserResponseDto List 변환 */
+  public List<AdminUserResponseDto> toAdminUserResponseDtoList(List<User> users) {
+    return users.stream()
+        .map(this::toAdminUserResponseDto)
+        .collect(Collectors.toList());
+  }
+
+  /** ✅ 일반 사용자 Entity → UserResponseDto 변환 */
   public UserResponseDto toUserResponseDto(User user) {
     if (user == null) return null;
 
@@ -34,23 +55,7 @@ public class UserMapper {
         .build();
   }
 
-  /** 관리자용: 전체 사용자 목록 Entity List → UserListResponseDto List 변환 */
-  public List<UserListResponseDto> toUserListResponseDto(List<User> users) {
-    return users.stream()
-        .map(user -> UserListResponseDto.builder()
-            .userId(user.getUserId())
-            .email(user.getEmail())
-            .name(user.getName())
-            .nickname(user.getNickname())
-            .birth(user.getBirth())
-            .role(user.getRole().name())
-            .isDeleted(user.getIsDeleted())
-            .createdAt(user.getCreatedAt())
-            .build())
-        .collect(Collectors.toList());
-  }
-
-  /** 닉네임 중복 확인 결과 → CheckNicknameResponseDto 변환 */
+  /** ✅ 닉네임 중복 확인 결과 → CheckNicknameResponseDto 변환 */
   public CheckNicknameResponseDto toCheckNicknameResponseDto(String nickname, boolean exists) {
     return CheckNicknameResponseDto.builder()
         .nickname(nickname)
