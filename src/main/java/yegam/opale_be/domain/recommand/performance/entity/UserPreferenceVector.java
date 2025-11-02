@@ -21,7 +21,7 @@ public class UserPreferenceVector extends BaseTimeEntity {
 
   @Id
   @Column(name = "user_id", length = 20)
-  private String userId;
+  private Long userId;
 
   @Lob
   @Column(name = "embedding_vector", columnDefinition = "MEDIUMTEXT")

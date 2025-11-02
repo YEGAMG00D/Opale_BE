@@ -8,8 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -26,7 +24,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private static final String BEARER_PREFIX = "Bearer ";
 
   private final JwtProvider jwtProvider;
-  private final UserDetailsService userDetailsService;
 
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -36,21 +33,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     if (token != null) {
       try {
-        // 유효성 검증 (예외 발생 시 catch로 넘어감)
         jwtProvider.validateTokenOrThrow(token);
-
-        // subject = userId
-        Long userId = Long.parseLong(jwtProvider.extractUserId(token));
-        UserDetails userDetails = userDetailsService.loadUserByUsername(String.valueOf(userId));
+        Long userId = jwtProvider.extractUserIdAsLong(token);
 
         UsernamePasswordAuthenticationToken authentication =
-            new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+            new UsernamePasswordAuthenticationToken(userId, null, null);
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
       } catch (Exception e) {
         log.warn("JWT 인증 실패: {}", e.getMessage());
-        // JWT 예외 발생 시 SecurityContext 비우고 계속 진행 (익명 사용자로 처리)
         SecurityContextHolder.clearContext();
       }
     }
@@ -60,10 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private String resolveToken(HttpServletRequest request) {
     String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-    log.debug("Authorization Header: {}", bearerToken);
-    if (bearerToken != null && bearerToken.startsWith(BEARER_PREFIX)) {
-      return bearerToken.substring(BEARER_PREFIX.length()).trim();
-    }
-    return null;
+    if (bearerToken == null || bearerToken.isBlank()) return null;
+    if (!bearerToken.startsWith(BEARER_PREFIX)) return null;
+    String token = bearerToken.substring(BEARER_PREFIX.length()).trim();
+    if (token.isEmpty()) return null;
+    return token;
   }
 }

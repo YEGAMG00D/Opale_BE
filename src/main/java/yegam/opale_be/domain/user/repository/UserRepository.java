@@ -1,12 +1,40 @@
 package yegam.opale_be.domain.user.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
 import yegam.opale_be.domain.user.entity.User;
 
+import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-  Optional<User> findByEmail(String email);
-  boolean existsByEmail(String email);
-}
 
+  /**
+   * 이메일로 사용자 조회 (로그인, 비밀번호 재설정 등에서 사용)
+   */
+  Optional<User> findByEmail(String email);
+
+  /**
+   * 이메일 중복 검사
+   */
+  boolean existsByEmail(String email);
+
+  /**
+   * 닉네임 중복 검사 (선택적으로 사용 가능)
+   */
+  boolean existsByNickname(String nickname);
+
+  /**
+   * 탈퇴하지 않은 사용자만 조회
+   */
+  @Query("SELECT u FROM User u WHERE u.isDeleted = false")
+  List<User> findAllActiveUsers();
+
+  /**
+   * 탈퇴 여부 포함 전체 회원 목록 (관리자용)
+   */
+  @Query("SELECT u FROM User u ORDER BY u.createdAt DESC")
+  List<User> findAllUsersOrderByCreatedAt();
+}

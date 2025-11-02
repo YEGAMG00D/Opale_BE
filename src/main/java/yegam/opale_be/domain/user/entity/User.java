@@ -27,8 +27,10 @@ import java.time.LocalDateTime;
 public class User extends BaseTimeEntity {
 
   @Id
-  @Column(name = "user_id", length = 20)
-  private String userId;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  @Column(name = "user_id")
+  private Long userId;
+
 
   @Column(nullable = false, unique = true, length = 255)
   private String email;
@@ -57,9 +59,11 @@ public class User extends BaseTimeEntity {
   private String nickname;
 
   @Enumerated(EnumType.STRING)
+  @Builder.Default
   @Column(nullable = false, length = 10)
   private Role role = Role.USER;
 
+  @Builder.Default
   @Column(nullable = false)
   private Boolean isDeleted = false;
 

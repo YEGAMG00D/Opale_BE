@@ -1,6 +1,6 @@
 package yegam.opale_be.domain.user.dto.request;
 
-import jakarta.validation.constraints.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
 @Getter
@@ -8,13 +8,18 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(title = "UserUpdateRequest DTO", description = "본인 정보 변경을 위한 데이터 전송")
 public class UserUpdateRequestDto {
 
-  @Size(max = 20, message = "닉네임은 20자 이하로 입력해주세요.")
-  private String nickname;
-
-  @Pattern(regexp = "^[0-9]{10,11}$", message = "연락처 형식이 올바르지 않습니다.")
+  @Schema(description = "연락처", example = "01012345678")
   private String phone;
 
-  private String address;
+  @Schema(description = "주소 1", example = "서울특별시 강남구 테헤란로 123")
+  private String address1;
+
+  @Schema(description = "주소 2", example = "아파트 101동 1001호")
+  private String address2;
+
+  @Schema(description = "닉네임", example = "문화덕후")
+  private String nickname;
 }

@@ -46,20 +46,28 @@ public class JwtProvider {
     }
   }
 
-  public String extractUserId(String token) {
-    return Jwts.parserBuilder()
-        .setSigningKey(key)
-        .build()
-        .parseClaimsJws(token)
-        .getBody()
-        .getSubject();
+  // ✅ String → Long 변환 메서드 추가
+  public Long extractUserIdAsLong(String token) {
+    try {
+      return Long.parseLong(
+          Jwts.parserBuilder()
+              .setSigningKey(key)
+              .build()
+              .parseClaimsJws(token)
+              .getBody()
+              .getSubject()
+      );
+    } catch (Exception e) {
+      throw new CustomException(GlobalErrorCode.JWT_INVALID);
+    }
   }
 
-  public String createAccessToken(String userId, String email, String role) {
+  // 그대로 사용 가능 (userId를 문자열로 저장)
+  public String createAccessToken(Long userId, String email, String role) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + accessTokenExpireTime);
     return Jwts.builder()
-        .setSubject(userId)
+        .setSubject(String.valueOf(userId))
         .claim("email", email)
         .claim("role", role)
         .setIssuedAt(now)
@@ -68,11 +76,11 @@ public class JwtProvider {
         .compact();
   }
 
-  public String createRefreshToken(String userId) {
+  public String createRefreshToken(Long userId) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + refreshTokenExpireTime);
     return Jwts.builder()
-        .setSubject(userId)
+        .setSubject(String.valueOf(userId))
         .setIssuedAt(now)
         .setExpiration(expiry)
         .signWith(key, SignatureAlgorithm.HS256)

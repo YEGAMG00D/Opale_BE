@@ -13,7 +13,6 @@ import yegam.opale_be.domain.user.service.UserService;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.exception.GlobalErrorCode;
 import yegam.opale_be.global.response.BaseResponse;
-import yegam.opale_be.global.security.CustomUserDetails;
 
 @RestController
 @RequestMapping("/api/users")
@@ -44,31 +43,26 @@ public class UserController {
   @Operation(summary = "사용자 본인 정보 조회", description = "사용자 본인의 정보 조회를 위한 API")
   @GetMapping("/me")
   public ResponseEntity<BaseResponse<UserResponseDto>> getMyInfo(
-      @AuthenticationPrincipal CustomUserDetails userDetails) {
+      @AuthenticationPrincipal Long userId) {
 
-    if (userDetails == null) {
+    if (userId == null) {
       throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
     }
 
-    Long userId = userDetails.getUser().getId();
     UserResponseDto response = userService.getUser(userId);
     return ResponseEntity.ok(BaseResponse.success("내 정보 조회 성공", response));
   }
-
-
 
   /** 내 정보 수정 */
   @Operation(summary = "내 정보 수정", description = "사용자 본인의 정보를 수정합니다.")
   @PutMapping("/me")
   public ResponseEntity<BaseResponse<UserResponseDto>> updateMyInfo(
-      @AuthenticationPrincipal CustomUserDetails userDetails,
+      @AuthenticationPrincipal Long userId,
       @RequestBody @Valid UserUpdateRequestDto dto
   ) {
-    Long userId = userDetails.getUser().getId();
     UserResponseDto response = userService.updateUser(userId, dto);
     return ResponseEntity.ok(BaseResponse.success("내 정보 수정 완료", response));
   }
-
 
   /** 비밀번호 변경 */
   @Operation(summary = "비밀번호 변경", description = "사용자의 비밀번호를 변경합니다.")

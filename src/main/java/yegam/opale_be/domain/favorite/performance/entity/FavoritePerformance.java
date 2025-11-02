@@ -21,6 +21,7 @@ public class FavoritePerformance extends BaseTimeEntity {
   @Column(name = "performance_like_id", nullable = false)
   private Long performanceLikeId;
 
+  @Builder.Default
   @Column(name = "is_liked", nullable = false)
   private Boolean isLiked = true;
 

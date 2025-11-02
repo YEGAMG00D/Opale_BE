@@ -1,9 +1,10 @@
-package yegam.opale_be.domain.culture.performance.entity;
+package yegam.opale_be.domain.reservation.entity;
 
 
 
 import jakarta.persistence.*;
 import lombok.*;
+import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.user.entity.User;
 
 import java.time.LocalDateTime;

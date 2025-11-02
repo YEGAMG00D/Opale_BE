@@ -3,7 +3,7 @@ package yegam.opale_be.domain.chat.room.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import yegam.opale_be.domain.culture.performance.Performance;
+import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.global.common.BaseTimeEntity;
 
 @Entity
