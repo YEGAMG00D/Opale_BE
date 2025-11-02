@@ -18,7 +18,10 @@ public enum UserErrorCode implements BaseErrorCode {
   USER_DELETED("USER_4006", "탈퇴한 사용자입니다.", HttpStatus.FORBIDDEN),
 
   REFRESH_TOKEN_NOT_FOUND("USER_4007", "저장된 Refresh Token이 없습니다.", HttpStatus.UNAUTHORIZED),
-  REFRESH_TOKEN_MISMATCH("USER_4008", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED);
+  REFRESH_TOKEN_MISMATCH("USER_4008", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
+
+
+  DUPLICATE_NICKNAME("USER_4009", "이미 사용 중인 닉네임입니다.", HttpStatus.CONFLICT);
 
   private final String code;
   private final String message;

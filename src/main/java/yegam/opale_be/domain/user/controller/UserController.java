@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yegam.opale_be.domain.user.dto.request.*;
+import yegam.opale_be.domain.user.dto.response.CheckNicknameResponseDto;
 import yegam.opale_be.domain.user.dto.response.UserResponseDto;
 import yegam.opale_be.domain.user.service.UserService;
 import yegam.opale_be.global.exception.CustomException;
@@ -31,6 +32,20 @@ public class UserController {
     return ResponseEntity.ok(BaseResponse.success(message, null));
   }
 
+  /** 닉네임 중복 확인 */
+  @Operation(summary = "닉네임 중복 확인", description = "사용자 닉네임이 중복되는지 확인하는 API")
+  @PostMapping("/check-nickname")
+  public ResponseEntity<BaseResponse<CheckNicknameResponseDto>> checkDuplicateNickname(
+      @RequestBody @Valid CheckNicknameRequestDto dto
+  ) {
+    CheckNicknameResponseDto response = userService.checkDuplicateNickname(dto.getNickname());
+    String message = response.isAvailable()
+        ? "사용 가능한 닉네임입니다."
+        : "이미 존재하는 닉네임입니다.";
+    return ResponseEntity.ok(BaseResponse.success(message, response));
+  }
+
+
   /** 회원가입 */
   @Operation(summary = "회원가입", description = "사용자 회원가입을 위한 API")
   @PostMapping
@@ -42,19 +57,14 @@ public class UserController {
   /** 내 정보 조회 */
   @Operation(summary = "사용자 본인 정보 조회", description = "사용자 본인의 정보 조회를 위한 API")
   @GetMapping("/me")
-  public ResponseEntity<BaseResponse<UserResponseDto>> getMyInfo(
-      @AuthenticationPrincipal Long userId) {
-
-    if (userId == null) {
-      throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
-    }
-
+  public ResponseEntity<BaseResponse<UserResponseDto>> getMyInfo(@AuthenticationPrincipal Long userId) {
+    if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
     UserResponseDto response = userService.getUser(userId);
     return ResponseEntity.ok(BaseResponse.success("내 정보 조회 성공", response));
   }
 
   /** 내 정보 수정 */
-  @Operation(summary = "내 정보 수정", description = "사용자 본인의 정보를 수정합니다.")
+  @Operation(summary = "내 정보 수정", description = "사용자 본인의 정보를 수정합니다. (닉네임 중복 검사 포함)")
   @PutMapping("/me")
   public ResponseEntity<BaseResponse<UserResponseDto>> updateMyInfo(
       @AuthenticationPrincipal Long userId,

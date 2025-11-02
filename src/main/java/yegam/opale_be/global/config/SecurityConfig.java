@@ -41,7 +41,8 @@ public class SecurityConfig {
             .requestMatchers(
                 "/api/auth/login",
                 "/api/users",
-                "/api/users/check-duplicate"
+                "/api/users/check-duplicate",
+                "/api/users/check-nickname" // ✅ 닉네임 중복 확인도 로그인 없이 가능하게 추가!
             ).permitAll()
             .anyRequest().authenticated()
         )

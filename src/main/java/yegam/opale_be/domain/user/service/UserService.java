@@ -5,11 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import yegam.opale_be.domain.user.dto.request.PasswordChangeRequestDto;
-import yegam.opale_be.domain.user.dto.request.UserDeleteRequestDto;
-import yegam.opale_be.domain.user.dto.request.UserSignUpRequestDto;
-import yegam.opale_be.domain.user.dto.request.UserUpdateRequestDto;
-import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.dto.request.*;
+import yegam.opale_be.domain.user.dto.response.*;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.domain.user.exception.UserErrorCode;
 import yegam.opale_be.domain.user.mapper.UserMapper;
@@ -34,10 +31,20 @@ public class UserService {
     return userRepository.existsByEmail(email);
   }
 
+  /** 닉네임 중복 확인 (Mapper 이용) */
+  @Transactional(readOnly = true)
+  public CheckNicknameResponseDto checkDuplicateNickname(String nickname) {
+    boolean exists = userRepository.existsByNickname(nickname);
+    return userMapper.toCheckNicknameResponseDto(nickname, exists);
+  }
+
   /** 회원가입 */
   public UserResponseDto signUp(UserSignUpRequestDto dto) {
     if (userRepository.existsByEmail(dto.getEmail())) {
       throw new CustomException(UserErrorCode.DUPLICATE_EMAIL);
+    }
+    if (userRepository.existsByNickname(dto.getNickname())) {
+      throw new CustomException(UserErrorCode.DUPLICATE_NICKNAME);
     }
 
     User user = User.builder()
@@ -69,14 +76,23 @@ public class UserService {
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
 
-  /** 내 정보 수정 */
+  /** 내 정보 수정 (닉네임 중복 검사 포함) */
   public UserResponseDto updateUser(Long userId, UserUpdateRequestDto dto) {
     return userRepository.findById(userId)
         .map(user -> {
-          if (dto.getNickname() != null) user.setNickname(dto.getNickname());
+          if (dto.getNickname() != null) {
+            // 닉네임 중복 검사 (자기 자신 제외)
+            if (userRepository.existsByNickname(dto.getNickname())
+                && !dto.getNickname().equals(user.getNickname())) {
+              throw new CustomException(UserErrorCode.DUPLICATE_NICKNAME);
+            }
+            user.setNickname(dto.getNickname());
+          }
+
           if (dto.getPhone() != null) user.setPhone(dto.getPhone());
           if (dto.getAddress1() != null) user.setAddress1(dto.getAddress1());
           if (dto.getAddress2() != null) user.setAddress2(dto.getAddress2());
+
           log.info("회원 정보 수정: userId={}, email={}", user.getUserId(), user.getEmail());
           return userMapper.toUserResponseDto(user);
         })
@@ -108,6 +124,4 @@ public class UserService {
         })
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
-
-
 }
