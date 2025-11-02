@@ -37,3 +37,11 @@ application-*.properties
 *.swp
 .vscode/
 .ipynb_checkpoints/
+
+
+# Ignore admin initializer (local-only setup)
+src/main/java/yegam/opale_be/global/init/
+
+
+
+
