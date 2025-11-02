@@ -42,7 +42,10 @@ public class SecurityConfig {
                 "/api/auth/login",
                 "/api/users",
                 "/api/users/check-duplicate",
-                "/api/users/check-nickname" // ✅ 닉네임 중복 확인도 로그인 없이 가능하게 추가!
+                "/api/users/check-nickname",
+                // ✅ 이메일 인증 관련 API (회원가입 전 단계)
+                "/api/email/send",
+                "/api/email/verify"
             ).permitAll()
             .anyRequest().authenticated()
         )
