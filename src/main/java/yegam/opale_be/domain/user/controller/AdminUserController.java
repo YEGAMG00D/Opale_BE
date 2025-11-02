@@ -25,7 +25,8 @@ public class AdminUserController {
 
   @Operation(
       summary = "(운영자) 전체 회원 목록 확인",
-      description = "탈퇴 회원 포함 전체 회원 목록을 가입일 기준 최신순으로 조회합니다.",
+      description = "탈퇴 회원 포함 전체 회원 목록을 조회합니다. " +
+          "기본적으로 일반 회원만 표시하며, `includeAdmin=true` 를 지정하면 운영자 계정도 함께 표시됩니다.",
       responses = {
           @ApiResponse(responseCode = "200", description = "조회 성공",
               content = @Content(schema = @Schema(implementation = AdminUserListResponseDto.class)))
@@ -33,8 +34,11 @@ public class AdminUserController {
   )
   @GetMapping("/users")
   @PreAuthorize("hasRole('ADMIN')")
-  public ResponseEntity<BaseResponse<AdminUserListResponseDto>> getAllUsers() {
-    AdminUserListResponseDto response = adminUserService.getAllUsers();
+  public ResponseEntity<BaseResponse<AdminUserListResponseDto>> getAllUsers(
+      @Parameter(description = "운영자 포함 여부", example = "false")
+      @RequestParam(defaultValue = "false") boolean includeAdmin
+  ) {
+    AdminUserListResponseDto response = adminUserService.getAllUsers(includeAdmin);
     return ResponseEntity.ok(BaseResponse.success("전체 회원 조회 성공", response));
   }
 

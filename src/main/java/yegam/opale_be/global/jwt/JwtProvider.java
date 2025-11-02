@@ -31,6 +31,7 @@ public class JwtProvider {
     this.refreshTokenExpireTime = refreshTokenExpireTime;
   }
 
+  /** ✅ 토큰 유효성 검증 */
   public void validateTokenOrThrow(String token) {
     try {
       Jwts.parserBuilder()
@@ -46,7 +47,7 @@ public class JwtProvider {
     }
   }
 
-  // ✅ String → Long 변환 메서드 추가
+  /** ✅ 사용자 ID(Long) 추출 */
   public Long extractUserIdAsLong(String token) {
     try {
       return Long.parseLong(
@@ -62,20 +63,21 @@ public class JwtProvider {
     }
   }
 
-  // 그대로 사용 가능 (userId를 문자열로 저장)
+  /** ✅ AccessToken 생성 */
   public String createAccessToken(Long userId, String email, String role) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + accessTokenExpireTime);
     return Jwts.builder()
         .setSubject(String.valueOf(userId))
         .claim("email", email)
-        .claim("role", role)
+        .claim("role", role) // ROLE_ 붙이지 않음
         .setIssuedAt(now)
         .setExpiration(expiry)
         .signWith(key, SignatureAlgorithm.HS256)
         .compact();
   }
 
+  /** ✅ RefreshToken 생성 */
   public String createRefreshToken(Long userId) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + refreshTokenExpireTime);
@@ -87,6 +89,7 @@ public class JwtProvider {
         .compact();
   }
 
+  /** ✅ 역할(Role) 추출 */
   public String extractUserRole(String token) {
     try {
       return Jwts.parserBuilder()
@@ -99,7 +102,4 @@ public class JwtProvider {
       throw new CustomException(GlobalErrorCode.JWT_INVALID);
     }
   }
-
-
-
 }

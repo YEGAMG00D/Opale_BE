@@ -39,11 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwtProvider.validateTokenOrThrow(token);
 
         Long userId = jwtProvider.extractUserIdAsLong(token);
-        String role = jwtProvider.extractUserRole(token); // ✅ 추가된 부분
+        String role = jwtProvider.extractUserRole(token);
 
-        // ✅ Spring Security용 권한 리스트 생성
+        // ✅ Spring Security 권한 리스트 (ROLE_ prefix 필수)
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
-            new SimpleGrantedAuthority(role)
+            new SimpleGrantedAuthority("ROLE_" + role)
         );
 
         UsernamePasswordAuthenticationToken authentication =
@@ -51,8 +51,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        log.debug("✅ JWT 인증 성공 - userId={}, role={}", userId, role);
+
       } catch (Exception e) {
-        log.warn("JWT 인증 실패: {}", e.getMessage());
+        log.warn("❌ JWT 인증 실패: {}", e.getMessage());
         SecurityContextHolder.clearContext();
       }
     }
@@ -65,7 +68,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     if (bearerToken == null || bearerToken.isBlank()) return null;
     if (!bearerToken.startsWith(BEARER_PREFIX)) return null;
     String token = bearerToken.substring(BEARER_PREFIX.length()).trim();
-    if (token.isEmpty()) return null;
-    return token;
+    return token.isEmpty() ? null : token;
   }
 }

@@ -23,12 +23,15 @@ public class AdminUserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
-  /** 전체 회원 목록 조회 (탈퇴 포함) */
-  public AdminUserListResponseDto getAllUsers() {
-    List<User> users = userRepository.findAllUsersOrderByCreatedAt();
+  /** 전체 회원 목록 조회 (운영자 포함 여부에 따라 필터링) */
+  public AdminUserListResponseDto getAllUsers(boolean includeAdmin) {
+    List<User> users = includeAdmin
+        ? userRepository.findAllUsersOrderByCreatedAt()
+        : userRepository.findAllUsersExceptAdminOrderByCreatedAt();
+
     long totalCount = users.size();
 
-    log.info("관리자 전체 회원 조회: 총 {}명", totalCount);
+    log.info("관리자 전체 회원 조회 (ADMIN 포함 여부={}): 총 {}명", includeAdmin, totalCount);
 
     return AdminUserListResponseDto.builder()
         .totalCount(totalCount)
