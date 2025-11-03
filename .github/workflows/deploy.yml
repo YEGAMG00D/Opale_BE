@@ -46,12 +46,13 @@ jobs:
             echo "🧹 기존 컨테이너 종료 및 삭제..."
             docker rm -f opale-be || true
 
-            echo "🚀 새 컨테이너 실행..."
+            echo "🚀 새 컨테이너 실행 (application.yml 자동 마운트)"
             docker run -d \
               --name opale-be \
               --network opale-net \
               -p 8080:8080 \
-              -v /home/ec2-user/resources:/config \
+              -v /home/ec2-user/resources/application.yml:/app/application.yml \
+              -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
               opale-be
 
             echo "🎉 Deployment completed successfully!"
