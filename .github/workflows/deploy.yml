@@ -1,0 +1,48 @@
+name: Deploy Spring Boot to EC2 with Docker
+
+on:
+  push:
+    branches:
+      - main   # main 브랜치에 push될 때마다 실행
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 코드 가져오기
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ EC2로 SSH 접속 후 Docker 빌드 & 실행
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "✅ Start Deployment"
+            cd /home/ec2-user/opale_be || mkdir /home/ec2-user/opale_be && cd /home/ec2-user/opale_be
+
+            echo "📦 Pull latest code"
+            git pull origin main || git clone https://github.com/YEGAMG00D/opale_be.git .
+
+            echo "🛠️ Build project"
+            ./gradlew clean build -x test
+
+            echo "🐳 Build Docker image"
+            docker build -t opale-be .
+
+            echo "🧹 Remove old container"
+            docker stop opale-be || true
+            docker rm opale-be || true
+
+            echo "🚀 Run new container"
+            docker run -d \
+              --name opale-be \
+              --network opale-net \
+              -p 8080:8080 \
+              opale-be
+
+            echo "🎉 Deployment completed successfully!"
