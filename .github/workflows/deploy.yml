@@ -13,7 +13,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ EC2로 전체 프로젝트 업로드
+      # 2️⃣ EC2로 프로젝트 업로드
       - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -47,6 +47,11 @@ jobs:
             docker rm -f opale-be || true
 
             echo "🚀 새 컨테이너 실행..."
-            docker run -d --name opale-be --network opale-net -p 8080:8080 opale-be
+            docker run -d \
+              --name opale-be \
+              --network opale-net \
+              -p 8080:8080 \
+              -v /home/ec2-user/resources:/config \
+              opale-be
 
             echo "🎉 Deployment completed successfully!"
