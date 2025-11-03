@@ -34,12 +34,12 @@ public class SwaggerConfig {
                 .bearerFormat("JWT")
         ))
         .info(new Info()
-            .title("Yegam : Opale - API 명세서")
+            .title("Opale - 백엔드 API 명세서")
             .version("1.0")
             .description("""
                 ⚪ 공연 정보 공유 플랫폼: 회원 인증 관련 API
                 
-                ● Authorization 가이드
+                 ■ Authorization 가이드
                 - 로그인 후 발급받은 AccessToken을 전역 Authorize 창에 입력하세요.
                 - 입력 시 'Bearer '를 제외한 순수 토큰 값만 입력 (예: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...)
                 - AccessToken 만료 시 /api/auth/refresh 호출 시에는 헤더에 Refresh-Token을 추가하세요.
