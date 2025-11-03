@@ -2,19 +2,29 @@ name: Deploy Spring Boot to EC2 with Docker
 
 on:
   push:
-    branches:
-      - main   # main 브랜치에 push될 때마다 실행
+    branches: [ main ]  # main에 머지/푸시될 때만 배포
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # 1️⃣ 코드 가져오기
+      # 1) 레포 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ EC2로 SSH 접속 후 Docker 빌드 & 실행
+      # 2) 현재 레포 전체를 EC2로 업로드 (private repo여도 OK)
+      - name: Upload project to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "./"
+          target: "/home/ec2-user/opale_be"
+          overwrite: true
+          rm: true
+
+      # 3) EC2에 접속해 도커 빌드/실행
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -22,27 +32,18 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "✅ Start Deployment"
-            cd /home/ec2-user/opale_be || mkdir /home/ec2-user/opale_be && cd /home/ec2-user/opale_be
+            set -e
+            cd /home/ec2-user/opale_be
 
-            echo "📦 Pull latest code"
-            git pull origin main || git clone https://github.com/YEGAMG00D/opale_be.git .
+            # 네트워크 준비 (이미 있으면 무시)
+            docker network create opale-net || true
+            docker network connect opale-net mysql-opale || true
 
-            echo "🛠️ Build project"
-            ./gradlew clean build -x test
-
-            echo "🐳 Build Docker image"
+            # 도커 이미지 빌드
             docker build -t opale-be .
 
-            echo "🧹 Remove old container"
-            docker stop opale-be || true
-            docker rm opale-be || true
+            # 기존 컨테이너 정리 후 재실행
+            docker rm -f opale-be || true
+            docker run -d --name opale-be --network opale-net -p 8080:8080 opale-be
 
-            echo "🚀 Run new container"
-            docker run -d \
-              --name opale-be \
-              --network opale-net \
-              -p 8080:8080 \
-              opale-be
-
-            echo "🎉 Deployment completed successfully!"
+            echo "🎉 Deployment completed!"
