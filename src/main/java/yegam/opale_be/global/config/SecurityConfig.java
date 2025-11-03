@@ -45,7 +45,8 @@ public class SecurityConfig {
                 "/api/users/check-nickname",
                 // ✅ 이메일 인증 관련 API (회원가입 전 단계)
                 "/api/email/send",
-                "/api/email/verify"
+                "/api/email/verify",
+                "/health"
             ).permitAll()
             .anyRequest().authenticated()
         )
