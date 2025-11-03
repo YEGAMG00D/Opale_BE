@@ -11,8 +11,10 @@ WORKDIR /app
 # 빌드된 JAR 복사
 COPY --from=build /home/gradle/project/build/libs/*.jar /app/app.jar
 
-# 외부 설정 파일(application.yml) 참조하도록 설정
+#  외부 설정 파일(application.yml) 경로 지정 (환경변수)
 ENV SPRING_CONFIG_LOCATION=file:/home/ec2-user/resources/application.yml
 
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+#  ENTRYPOINT 단일 JAR 실행
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

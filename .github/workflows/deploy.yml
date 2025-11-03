@@ -7,12 +7,13 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      # 1) 레포 코드 체크아웃
+      # 1️⃣ 레포 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2) 현재 레포 전체를 EC2로 업로드 (private repo여도 OK)
+      # 2️⃣ EC2로 전체 프로젝트 업로드
       - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -24,7 +25,7 @@ jobs:
           overwrite: true
           rm: true
 
-      # 3) EC2에 접속해 도커 빌드/실행
+      # 3️⃣ EC2 접속 → Docker 빌드 및 재배포
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -35,15 +36,17 @@ jobs:
             set -e
             cd /home/ec2-user/opale_be
 
-            # 네트워크 준비 (이미 있으면 무시)
+            echo "🛠 Docker 네트워크 연결 확인..."
             docker network create opale-net || true
             docker network connect opale-net mysql-opale || true
 
-            # 도커 이미지 빌드
+            echo "🔨 새 이미지 빌드 중..."
             docker build -t opale-be .
 
-            # 기존 컨테이너 정리 후 재실행
+            echo "🧹 기존 컨테이너 종료 및 삭제..."
             docker rm -f opale-be || true
+
+            echo "🚀 새 컨테이너 실행..."
             docker run -d --name opale-be --network opale-net -p 8080:8080 opale-be
 
-            echo "🎉 Deployment completed!"
+            echo "🎉 Deployment completed successfully!"
