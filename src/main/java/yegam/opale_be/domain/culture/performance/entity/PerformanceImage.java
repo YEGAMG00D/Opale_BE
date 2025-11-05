@@ -38,7 +38,7 @@ public class PerformanceImage {
   private String sourceUrl;
 
   public enum ImageType {
-    DISCOUNT, SEAT, NOTICE, 기타
+    DISCOUNT, CASTING, SEAT, NOTICE, 기타
   }
 }
 

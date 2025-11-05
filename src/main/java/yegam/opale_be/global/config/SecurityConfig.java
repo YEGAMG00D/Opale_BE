@@ -43,10 +43,10 @@ public class SecurityConfig {
                 "/api/users",
                 "/api/users/check-duplicate",
                 "/api/users/check-nickname",
-                // ✅ 이메일 인증 관련 API (회원가입 전 단계)
                 "/api/email/send",
                 "/api/email/verify",
-                "/health"
+                "/health",
+                "/api/performances/**"
             ).permitAll()
             .anyRequest().authenticated()
         )

@@ -1,6 +1,7 @@
 package yegam.opale_be.domain.culture.performance.entity;
 
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.*;
 import yegam.opale_be.domain.place.entity.Place;
 
@@ -118,4 +119,18 @@ public class Performance {
   @Lob
   @Column(name = "embedding_vector", columnDefinition = "MEDIUMTEXT")
   private String embeddingVector;
+
+
+  @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
+  private List<PerformanceRelation> performanceRelations;
+
+  @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
+  private List<PerformanceVideo> performanceVideos;
+
+  @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
+  private List<PerformanceImage> performanceImages;
+
+  @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
+  private List<PerformanceInfoImage> performanceInfoImages;
+
 }
