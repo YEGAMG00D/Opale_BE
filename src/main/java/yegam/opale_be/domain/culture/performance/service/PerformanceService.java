@@ -13,7 +13,7 @@ import yegam.opale_be.domain.culture.performance.entity.*;
 import yegam.opale_be.domain.culture.performance.exception.PerformanceErrorCode;
 import yegam.opale_be.domain.culture.performance.mapper.PerformanceMapper;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
-import yegam.opale_be.global.common.BaseListResponseDto;
+import yegam.opale_be.global.common.BasePerformanceListResponseDto;
 import yegam.opale_be.global.exception.CustomException;
 
 import java.time.LocalDate;
@@ -68,7 +68,7 @@ public class PerformanceService {
   // ---------------------------------------------------------------------
 
   /** ✅ 공연 예매처 목록 */
-  public BaseListResponseDto<PerformanceRelationResponseDto> getPerformanceRelations(String performanceId) {
+  public BasePerformanceListResponseDto<PerformanceRelationResponseDto> getPerformanceRelations(String performanceId) {
     Performance p = performanceRepository.findByIdWithRelations(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
     List<PerformanceRelationResponseDto> list = p.getPerformanceRelations().stream()
@@ -78,7 +78,7 @@ public class PerformanceService {
   }
 
   /** ✅ 공연 영상 목록 */
-  public BaseListResponseDto<PerformanceVideoResponseDto> getPerformanceVideos(String performanceId) {
+  public BasePerformanceListResponseDto<PerformanceVideoResponseDto> getPerformanceVideos(String performanceId) {
     Performance p = performanceRepository.findByIdWithVideos(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
     List<PerformanceVideoResponseDto> list = p.getPerformanceVideos().stream()
@@ -88,7 +88,7 @@ public class PerformanceService {
   }
 
   /** ✅ 공연 수집 이미지 목록 */
-  public BaseListResponseDto<PerformanceImageResponseDto> getPerformanceImages(String performanceId) {
+  public BasePerformanceListResponseDto<PerformanceImageResponseDto> getPerformanceImages(String performanceId) {
     Performance p = performanceRepository.findByIdWithImages(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
     List<PerformanceImageResponseDto> list = p.getPerformanceImages().stream()
@@ -98,7 +98,7 @@ public class PerformanceService {
   }
 
   /** ✅ 공연 소개 이미지 목록 */
-  public BaseListResponseDto<PerformanceInfoImageResponseDto> getPerformanceInfoImages(String performanceId) {
+  public BasePerformanceListResponseDto<PerformanceInfoImageResponseDto> getPerformanceInfoImages(String performanceId) {
     Performance p = performanceRepository.findByIdWithInfoImages(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
     List<PerformanceInfoImageResponseDto> list = p.getPerformanceInfoImages().stream()

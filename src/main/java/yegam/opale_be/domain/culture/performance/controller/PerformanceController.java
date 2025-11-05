@@ -10,7 +10,7 @@ import yegam.opale_be.domain.culture.performance.dto.request.PerformanceSearchRe
 import yegam.opale_be.domain.culture.performance.dto.response.detail.*;
 import yegam.opale_be.domain.culture.performance.dto.response.list.*;
 import yegam.opale_be.domain.culture.performance.service.PerformanceService;
-import yegam.opale_be.global.common.BaseListResponseDto;
+import yegam.opale_be.global.common.BasePerformanceListResponseDto;
 import yegam.opale_be.global.response.BaseResponse;
 
 @RestController
@@ -62,20 +62,20 @@ public class PerformanceController {
   /** ✅ 공연 예매처 목록 조회 */
   @Operation(summary = "공연 예매처 목록 조회", description = "공연의 예매처 목록을 조회합니다.")
   @GetMapping("/{performanceId}/relation")
-  public ResponseEntity<BaseResponse<BaseListResponseDto<PerformanceRelationResponseDto>>> getPerformanceRelations(
+  public ResponseEntity<BaseResponse<BasePerformanceListResponseDto<PerformanceRelationResponseDto>>> getPerformanceRelations(
       @PathVariable String performanceId
   ) {
-    BaseListResponseDto<PerformanceRelationResponseDto> response = performanceService.getPerformanceRelations(performanceId);
+    BasePerformanceListResponseDto<PerformanceRelationResponseDto> response = performanceService.getPerformanceRelations(performanceId);
     return ResponseEntity.ok(BaseResponse.success("공연 예매처 목록 조회 성공", response));
   }
 
   /** ✅ 공연 영상 목록 조회 */
   @Operation(summary = "공연 관련 영상 조회", description = "공연의 관련 유튜브 영상을 조회합니다.")
   @GetMapping("/{performanceId}/video")
-  public ResponseEntity<BaseResponse<BaseListResponseDto<PerformanceVideoResponseDto>>> getPerformanceVideos(
+  public ResponseEntity<BaseResponse<BasePerformanceListResponseDto<PerformanceVideoResponseDto>>> getPerformanceVideos(
       @PathVariable String performanceId
   ) {
-    BaseListResponseDto<PerformanceVideoResponseDto> response = performanceService.getPerformanceVideos(performanceId);
+    BasePerformanceListResponseDto<PerformanceVideoResponseDto> response = performanceService.getPerformanceVideos(performanceId);
     return ResponseEntity.ok(BaseResponse.success("공연 영상 목록 조회 성공", response));
   }
 
@@ -92,10 +92,10 @@ public class PerformanceController {
   /** ✅ 공연 소개 이미지 조회 (공식 KOPIS 이미지) */
   @Operation(summary = "공연 소개 이미지 조회", description = "공연의 공식 소개 이미지를 순서대로 조회합니다.")
   @GetMapping("/{performanceId}/infoImage")
-  public ResponseEntity<BaseResponse<BaseListResponseDto<PerformanceInfoImageResponseDto>>> getPerformanceInfoImages(
+  public ResponseEntity<BaseResponse<BasePerformanceListResponseDto<PerformanceInfoImageResponseDto>>> getPerformanceInfoImages(
       @PathVariable String performanceId
   ) {
-    BaseListResponseDto<PerformanceInfoImageResponseDto> response = performanceService.getPerformanceInfoImages(performanceId);
+    BasePerformanceListResponseDto<PerformanceInfoImageResponseDto> response = performanceService.getPerformanceInfoImages(performanceId);
     return ResponseEntity.ok(BaseResponse.success("공연 소개 이미지 조회 성공", response));
   }
 }

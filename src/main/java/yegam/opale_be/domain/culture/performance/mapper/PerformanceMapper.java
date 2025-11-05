@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.culture.performance.dto.response.detail.*;
 import yegam.opale_be.domain.culture.performance.dto.response.list.*;
 import yegam.opale_be.domain.culture.performance.entity.*;
-import yegam.opale_be.global.common.BaseListResponseDto;
+import yegam.opale_be.global.common.BasePerformanceListResponseDto;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -31,8 +31,8 @@ public class PerformanceMapper {
   }
 
   /** ✅ BaseListResponseDto 공통 변환 */
-  public <T> BaseListResponseDto<T> toBaseListResponse(Performance performance, List<T> list) {
-    return BaseListResponseDto.<T>builder()
+  public <T> BasePerformanceListResponseDto<T> toBaseListResponse(Performance performance, List<T> list) {
+    return BasePerformanceListResponseDto.<T>builder()
         .performanceId(performance.getPerformanceId())
         .title(performance.getTitle())
         .totalCount(list.size())
