@@ -117,10 +117,12 @@ public class PlaceMapper {
         .poster(p.getPoster())
         .startDate(p.getStartDate() != null ? p.getStartDate().toLocalDate() : null)
         .endDate(p.getEndDate() != null ? p.getEndDate().toLocalDate() : null)
+        .prfstate(p.getPrfstate())
         .aiSummary(p.getAiSummary())
         .keywords(splitKeywords(p.getAiKeywords()))
         .build();
   }
+
 
   /** ✅ 공통 리스트 Response 변환 */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
