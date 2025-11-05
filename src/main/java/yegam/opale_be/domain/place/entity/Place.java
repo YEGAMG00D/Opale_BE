@@ -1,9 +1,11 @@
 package yegam.opale_be.domain.place.entity;
 
 import jakarta.persistence.*;
+import java.util.List;
 import lombok.*;
 
 import java.math.BigDecimal;
+import yegam.opale_be.domain.culture.performance.entity.Performance;
 
 @Entity
 @Table(name = "places")
@@ -77,4 +79,12 @@ public class Place {
 
   @Column(name = "parkinglot")
   private Boolean parkinglot;
+
+
+  @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
+  private List<Performance> performances;
+
+  @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
+  private List<PlaceStage> placeStages;
+
 }

@@ -46,7 +46,8 @@ public class SecurityConfig {
                 "/api/email/send",
                 "/api/email/verify",
                 "/health",
-                "/api/performances/**"
+                "/api/performances/**",
+                "/api/places/**"
             ).permitAll()
             .anyRequest().authenticated()
         )
