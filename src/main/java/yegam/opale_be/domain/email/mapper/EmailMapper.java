@@ -9,7 +9,7 @@ import yegam.opale_be.domain.email.entity.VerificationCode;
 @Component
 public class EmailMapper {
 
-  /** ✅ 인증번호 저장용 Entity 생성 */
+  /** 인증번호 저장용 Entity 생성 */
   public VerificationCode toVerificationCodeEntity(String email, String code, int expiresInSeconds) {
     return VerificationCode.builder()
         .email(email)
@@ -19,7 +19,7 @@ public class EmailMapper {
         .build();
   }
 
-  /** ✅ 인증번호 발송 결과 → EmailResponseDto 변환 */
+  /** 인증번호 발송 결과 → EmailResponseDto 변환 */
   public EmailResponseDto toEmailResponseDto(String email, int expiresInSeconds) {
     return EmailResponseDto.builder()
         .email(email)
@@ -28,7 +28,7 @@ public class EmailMapper {
         .build();
   }
 
-  /** ✅ 인증번호 확인 결과 → VerifyCodeResponseDto 변환 */
+  /** 인증번호 확인 결과 → VerifyCodeResponseDto 변환 */
   public VerifyCodeResponseDto toVerifyCodeResponseDto(String email, boolean verified) {
     return VerifyCodeResponseDto.builder()
         .email(email)

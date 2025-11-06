@@ -36,6 +36,11 @@ public class EmailController {
   private final EmailService emailService;
 
   /** 이메일 확인 및 인증번호 발송 */
+  /**
+   *
+   * @param {email}
+   * @return {email, message, expiresIn}
+   */
   @Operation(
       summary = "이메일 인증번호 발송",
       description = "입력한 이메일 주소로 인증번호를 전송합니다.",
@@ -53,6 +58,11 @@ public class EmailController {
   }
 
   /** 인증번호 검증 */
+  /**
+   *
+   * @param {email, code}
+   * @return {email, verified, message}
+   */
   @Operation(
       summary = "이메일 인증번호 검증",
       description = "입력한 이메일과 인증번호가 일치하는지 확인합니다.",
