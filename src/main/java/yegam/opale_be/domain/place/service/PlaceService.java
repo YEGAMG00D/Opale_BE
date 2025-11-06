@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.place.dto.request.PlaceSearchRequestDto;
 import yegam.opale_be.domain.place.dto.response.detail.*;
-import yegam.opale_be.domain.place.dto.response.list.PlaceListResponseDto;
+import yegam.opale_be.domain.place.dto.response.list.*;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
 import yegam.opale_be.domain.place.exception.PlaceErrorCode;
@@ -43,10 +43,32 @@ public class PlaceService {
     return placeMapper.toPagedPlaceListDto(pageResult);
   }
 
-  /** ✅ 근처 공연장 목록 조회 */
-  public PlaceListResponseDto getNearbyPlaces(PlaceSearchRequestDto dto) {
-    List<Place> places = placeRepository.findTop10ByOrderByNameAsc();
-    return placeMapper.toPlaceListDto(places);
+  /** ✅ 좌표 기반 근처 공연장 목록 조회 */
+  public PlaceNearbyListResponseDto getNearbyPlaces(PlaceSearchRequestDto dto) {
+    if (dto.getLatitude() == null || dto.getLongitude() == null) {
+      throw new CustomException(PlaceErrorCode.INVALID_COORDINATE);
+    }
+
+    double lat = dto.getLatitude().doubleValue(); // 위도
+    double lon = dto.getLongitude().doubleValue(); // 경도
+    int radius = dto.getRadius() != null ? dto.getRadius() : 3000;
+    String sortType = (dto.getSortType() != null && !dto.getSortType().isBlank())
+        ? dto.getSortType()
+        : "거리순";
+
+    List<Object[]> result = placeRepository.findNearbyPlacesWithDistance(lat, lon, radius);
+
+    PlaceNearbyListResponseDto response =
+        placeMapper.toNearbyListDto(result, lat, lon, radius, sortType);
+
+    // 🎯 정렬 처리 (이름순 / 거리순)
+    if ("이름순".equals(sortType)) {
+      response.getPlaces().sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+    } else {
+      response.getPlaces().sort((a, b) -> Double.compare(a.getDistance(), b.getDistance()));
+    }
+
+    return response;
   }
 
   /** ✅ 공연장 기본 정보 조회 */

@@ -4,8 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.place.dto.response.detail.*;
-import yegam.opale_be.domain.place.dto.response.list.PlaceListResponseDto;
-import yegam.opale_be.domain.place.dto.response.list.PlaceSummaryResponseDto;
+import yegam.opale_be.domain.place.dto.response.list.*;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
@@ -123,7 +122,6 @@ public class PlaceMapper {
         .build();
   }
 
-
   /** ✅ 공통 리스트 Response 변환 */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
@@ -138,5 +136,37 @@ public class PlaceMapper {
   private List<String> splitKeywords(String keywords) {
     if (keywords == null || keywords.isBlank()) return List.of();
     return List.of(keywords.split(","));
+  }
+
+  /** ✅ 좌표 기반 공연장 목록 변환 */
+  public PlaceNearbyListResponseDto toNearbyListDto(
+      List<Object[]> rows,
+      double latitude,
+      double longitude,
+      int radius,
+      String sortType
+  ) {
+    List<PlaceNearbyResponseDto> places = rows.stream()
+        .map(r -> PlaceNearbyResponseDto.builder()
+            .placeId((String) r[0])
+            .name((String) r[1])
+            .address((String) r[2])
+            .latitude(((Number) r[3]).doubleValue())
+            .longitude(((Number) r[4]).doubleValue())
+            .distance(((Number) r[5]).doubleValue())
+            .build())
+        .collect(Collectors.toList());
+
+    return PlaceNearbyListResponseDto.builder()
+        .totalCount(places.size())
+        .currentPage(1)
+        .pageSize(places.size())
+        .totalPages(1)
+        .sortType(sortType)
+        .searchLatitude(latitude)
+        .searchLongitude(longitude)
+        .searchRadius(radius)
+        .places(places)
+        .build();
   }
 }

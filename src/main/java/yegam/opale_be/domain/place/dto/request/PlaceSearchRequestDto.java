@@ -18,13 +18,13 @@ public class PlaceSearchRequestDto {
   @Schema(description = "검색어 (공연장명 등)", example = "세종문화회관")
   private String keyword;
 
-  @Schema(description = "정렬 방식 (이름순, 최신순 등)", example = "이름순")
+  @Schema(description = "정렬 방식 ('이름순', '거리순')", example = "이름순")
   private String sortType;
 
-  @Schema(description = "현재 위도", example = "37.5665")
+  @Schema(description = "현재 위도", example = "37.58217")
   private BigDecimal latitude;
 
-  @Schema(description = "현재 경도", example = "126.9780")
+  @Schema(description = "현재 경도", example = "126.9993234")
   private BigDecimal longitude;
 
   @Schema(description = "검색 반경 (m 단위)", example = "500")
