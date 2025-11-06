@@ -1,6 +1,7 @@
-package yegam.opale_be.domain.place.dto.response.detail;
+package yegam.opale_be.domain.place.dto.response.list;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import lombok.*;
 
 @Getter
@@ -22,10 +23,10 @@ public class PlaceNearbyResponseDto {
 
   
   @Schema(description = "공연장 위도", example = "37.5725254")
-  private double latitude;
+  private BigDecimal latitude;
 
   @Schema(description = "공연장 경도", example = "126.9756429")
-  private double longitude;
+  private BigDecimal longitude;
 
   @Schema(description = "거리 (m 단위)", example = "215.23")
   private double distance;

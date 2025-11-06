@@ -1,9 +1,9 @@
 package yegam.opale_be.domain.place.dto.response.list;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.math.BigDecimal;
 import lombok.*;
 import java.util.List;
-import yegam.opale_be.domain.place.dto.response.detail.PlaceNearbyResponseDto;
 
 @Getter
 @Setter
@@ -31,10 +31,10 @@ public class PlaceNearbyListResponseDto {
 
 
   @Schema(description = "기준 위도", example = "37.58217")
-  private double searchLatitude;
+  private BigDecimal searchLatitude;
 
   @Schema(description = "기준 경도", example = "126.9993234")
-  private double searchLongitude;
+  private BigDecimal searchLongitude;
 
   @Schema(description = "검색 반경", example = "500")
   private int searchRadius;

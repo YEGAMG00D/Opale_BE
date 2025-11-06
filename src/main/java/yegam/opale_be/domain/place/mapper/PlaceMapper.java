@@ -9,6 +9,7 @@ import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,6 +58,8 @@ public class PlaceMapper {
         .address(p.getAddress())
         .telno(p.getTelno())
         .stageCount(p.getStageCount())
+        .latitude(p.getLa())
+        .longitude(p.getLo())
         .build();
   }
 
@@ -71,6 +74,7 @@ public class PlaceMapper {
         .opende(p.getOpende())
         .seatscale(p.getSeatscale())
         .relateurl(p.getRelateurl())
+        .stageCount(p.getStageCount())
         .la(p.getLa())
         .lo(p.getLo())
         .build();
@@ -122,7 +126,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공통 리스트 Response 변환 */
+  /** ✅ 공통 리스트 Response 변환 (공연관/공연 등) */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
         .placeId(p.getPlaceId())
@@ -141,8 +145,8 @@ public class PlaceMapper {
   /** ✅ 좌표 기반 공연장 목록 변환 */
   public PlaceNearbyListResponseDto toNearbyListDto(
       List<Object[]> rows,
-      double latitude,
-      double longitude,
+      BigDecimal latitude,
+      BigDecimal longitude,
       int radius,
       String sortType
   ) {
@@ -151,9 +155,9 @@ public class PlaceMapper {
             .placeId((String) r[0])
             .name((String) r[1])
             .address((String) r[2])
-            .latitude(((Number) r[3]).doubleValue())
-            .longitude(((Number) r[4]).doubleValue())
-            .distance(((Number) r[5]).doubleValue())
+            .latitude((BigDecimal) r[3])   // ✅ BigDecimal 그대로 사용
+            .longitude((BigDecimal) r[4])  // ✅ BigDecimal 그대로 사용
+            .distance(((Number) r[5]).doubleValue()) // distance는 double 그대로
             .build())
         .collect(Collectors.toList());
 
@@ -169,4 +173,7 @@ public class PlaceMapper {
         .places(places)
         .build();
   }
+
+
+
 }
