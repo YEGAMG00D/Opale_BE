@@ -14,7 +14,7 @@ import java.util.Optional;
 @Repository
 public interface PerformanceRepository extends JpaRepository<Performance, String> {
 
-  /** ✅ 통합 검색: 장르 + 키워드 + 지역 (AND 조건) + 정렬 + 페이징 */
+  /** 통합 검색: 장르 + 키워드 + 지역 (AND 조건) + 정렬 + 페이징 */
   @Query("""
       SELECT p FROM Performance p
       WHERE
@@ -37,7 +37,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
       Pageable pageable
   );
 
-  /** ✅ 오늘 개막/종료 공연 조회 */
+  /** 오늘 개막/종료 공연 조회 */
   @Query("""
     SELECT p FROM Performance p
     WHERE 
@@ -47,14 +47,14 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
   """)
   List<Performance> findPerformancesByTypeAndDate(@Param("type") String type, @Param("today") LocalDate today);
 
-  /** ✅ 최신순 Top10 (임시 인기 대용) */
+  /** 최신순 Top10 (임시 인기 대용) */
   List<Performance> findTop10ByOrderByUpdatedateDesc();
 
   // ---------------------------------------------------------------------
-  // 🎭 상세 페이지 전용 Fetch Join 쿼리들
+  // 상세 페이지 용
   // ---------------------------------------------------------------------
 
-  /** 🎫 예매처 전용 Fetch Join */
+  /** 예매처 전용 Fetch Join */
   @Query("""
       SELECT DISTINCT p FROM Performance p
       LEFT JOIN FETCH p.performanceRelations
@@ -62,7 +62,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
   """)
   Optional<Performance> findByIdWithRelations(@Param("performanceId") String performanceId);
 
-  /** 🎥 영상 전용 Fetch Join */
+  /** 영상 전용 Fetch Join */
   @Query("""
       SELECT DISTINCT p FROM Performance p
       LEFT JOIN FETCH p.performanceVideos
@@ -70,7 +70,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
   """)
   Optional<Performance> findByIdWithVideos(@Param("performanceId") String performanceId);
 
-  /** 🖼 수집 이미지 전용 Fetch Join */
+  /** 수집 이미지 전용 Fetch Join */
   @Query("""
       SELECT DISTINCT p FROM Performance p
       LEFT JOIN FETCH p.performanceImages
@@ -78,7 +78,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
   """)
   Optional<Performance> findByIdWithImages(@Param("performanceId") String performanceId);
 
-  /** 📘 소개 이미지 전용 Fetch Join */
+  /** 소개 이미지 전용 Fetch Join */
   @Query("""
       SELECT DISTINCT p FROM Performance p
       LEFT JOIN FETCH p.performanceInfoImages
