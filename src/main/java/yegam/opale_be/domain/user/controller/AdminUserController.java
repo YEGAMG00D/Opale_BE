@@ -15,6 +15,18 @@ import yegam.opale_be.domain.user.dto.response.AdminUserResponseDto;
 import yegam.opale_be.domain.user.service.AdminUserService;
 import yegam.opale_be.global.response.BaseResponse;
 
+
+
+/**
+ * AdminUserController
+ *
+ *  ◎ 운영자용 회원 정보 관련 API 요청을 받는 Controller.
+ *  - 요청 경로: /api/admin
+ *
+ *  1) 전체 회원 목록 확인
+ *  2) 특정 회원 상세 정보 확인
+ *
+ */
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
@@ -23,6 +35,7 @@ public class AdminUserController {
 
   private final AdminUserService adminUserService;
 
+  /** 전체 회원 목록 확인 */
   @Operation(
       summary = "(운영자) 전체 회원 목록 확인",
       description = "탈퇴 회원 포함 전체 회원 목록을 조회합니다. " +
@@ -42,6 +55,7 @@ public class AdminUserController {
     return ResponseEntity.ok(BaseResponse.success("전체 회원 조회 성공", response));
   }
 
+  /** 특정 회원 상세 조회 */
   @Operation(
       summary = "(운영자) 특정 회원 상세 조회",
       description = "회원 ID로 특정 회원의 상세 정보를 조회합니다.",

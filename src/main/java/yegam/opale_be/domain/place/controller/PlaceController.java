@@ -16,6 +16,22 @@ import yegam.opale_be.domain.place.service.PlaceService;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 import yegam.opale_be.global.response.BaseResponse;
 
+
+
+/**
+ * PlaceController
+ *
+ *  ◎ 공연장 관련 API 요청을 받는 Controller.
+ *  - 요청 경로: /api/places
+ *
+ *  1) 공연장 목록 조회
+ *  2) 좌표 기반 근처 공연장 목록 조회
+ *  3) 공연장 기본 정보 조회
+ *  4) 공연장 내 공연관 목록 조회
+ *  5) 공연장 편의시설 정보 조회
+ *  6) 공연장별 공연 목록 조회
+ *
+ */
 @RestController
 @RequestMapping("/api/places")
 @RequiredArgsConstructor
@@ -25,7 +41,7 @@ public class PlaceController {
   private final PlaceService placeService;
 
 
-  /** ✅ 공연장 목록 조회 */
+  /** 공연장 목록 조회 */
   @Operation(summary = "공연장 목록 조회", description = "검색어, 지역, 정렬 기준에 따라 공연장 목록을 조회합니다.")
   @PostMapping
   public ResponseEntity<BaseResponse<PlaceListResponseDto>> getPlaceList(
@@ -35,7 +51,7 @@ public class PlaceController {
     return ResponseEntity.ok(BaseResponse.success("공연장 목록 조회 성공", response));
   }
 
-  /** ✅ 좌표 기반 근처 공연장 목록 조회 */
+  /** 좌표 기반 근처 공연장 목록 조회 */
   @Operation(summary = "좌표 기반 근처 공연장 목록 조회", description = "지도 기반으로 반경 내 공연장을 조회합니다. ('거리순' 또는 '이름순' 정렬 가능)")
   @PostMapping("/nearby")
   public ResponseEntity<BaseResponse<PlaceNearbyListResponseDto>> getNearbyPlaces(
@@ -46,7 +62,7 @@ public class PlaceController {
   }
 
 
-  /** ✅ 공연장 기본 정보 조회 */
+  /** 공연장 기본 정보 조회 */
   @Operation(summary = "공연장 기본 정보 조회", description = "공연장 ID를 통해 기본 정보를 조회합니다.")
   @GetMapping("/{placeId}/basic")
   public ResponseEntity<BaseResponse<PlaceBasicResponseDto>> getPlaceBasic(
@@ -56,7 +72,7 @@ public class PlaceController {
     return ResponseEntity.ok(BaseResponse.success("공연장 기본 정보 조회 성공", response));
   }
 
-  /** ✅ 공연장 내 공연관 목록 조회 */
+  /** 공연장 내 공연관 목록 조회 */
   @Operation(summary = "공연장 내 공연관(무대) 목록 조회", description = "공연장에 포함된 공연관(무대) 정보를 조회합니다.")
   @GetMapping("/{placeId}/stages")
   public ResponseEntity<BaseResponse<BasePlaceListResponseDto<PlaceStageResponseDto>>> getPlaceStages(
@@ -66,7 +82,7 @@ public class PlaceController {
     return ResponseEntity.ok(BaseResponse.success("공연장 내 공연관 목록 조회 성공", response));
   }
 
-  /** ✅ 공연장 편의시설 정보 조회 */
+  /** 공연장 편의시설 정보 조회 */
   @Operation(summary = "공연장 편의시설 정보 조회", description = "공연장 내의 편의시설(Y/N)을 조회합니다.")
   @GetMapping("/{placeId}/facilities")
   public ResponseEntity<BaseResponse<PlaceFacilityResponseDto>> getPlaceFacilities(
@@ -76,7 +92,7 @@ public class PlaceController {
     return ResponseEntity.ok(BaseResponse.success("공연장 편의시설 조회 성공", response));
   }
 
-  /** ✅ 공연장별 공연 목록 조회 */
+  /** 공연장별 공연 목록 조회 */
   @Operation(summary = "공연장별 공연 목록 조회", description = "특정 공연장에서 진행되는 공연 목록을 조회합니다.")
   @GetMapping("/{placeId}/performances")
   public ResponseEntity<BaseResponse<BasePlaceListResponseDto<PlacePerformanceResponseDto>>> getPlacePerformances(
@@ -85,4 +101,6 @@ public class PlaceController {
     BasePlaceListResponseDto<PlacePerformanceResponseDto> response = placeService.getPlacePerformances(placeId);
     return ResponseEntity.ok(BaseResponse.success("공연장별 공연 목록 조회 성공", response));
   }
+
+
 }

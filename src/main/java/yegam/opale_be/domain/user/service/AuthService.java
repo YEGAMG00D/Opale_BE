@@ -32,7 +32,12 @@ public class AuthService {
 
   private final Set<String> blacklistedTokens = new HashSet<>();
 
-  /** ✅ 로그인 */
+
+  // ---------------------------------------------------------------------
+  // 인증/인가(로그인 관련)
+  // ---------------------------------------------------------------------
+
+  /** 로그인 */
   public TokenResponse login(LoginRequestDto dto) {
     User user = userRepository.findByEmail(dto.getEmail())
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
@@ -51,7 +56,7 @@ public class AuthService {
         .expiresAt(LocalDateTime.now().plusDays(7))
         .build());
 
-    log.info("✅ 로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
+    log.info("로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
 
     return TokenResponse.builder()
         .accessToken("Bearer " + accessToken)
@@ -59,7 +64,7 @@ public class AuthService {
         .build();
   }
 
-  /** ✅ RefreshToken 기반 AccessToken 재발급 */
+  /** RefreshToken 기반 AccessToken 재발급 */
   public TokenResponse refreshAccessToken(String refreshToken) {
     if (refreshToken == null || refreshToken.isBlank()) {
       throw new CustomException(UserErrorCode.JWT_INVALID);
@@ -90,7 +95,7 @@ public class AuthService {
     savedToken.setExpiresAt(LocalDateTime.now().plusDays(7));
     userTokenRepository.save(savedToken);
 
-    log.info("♻️ AccessToken & RefreshToken 재발급 완료: userId={}", userId);
+    log.info("AccessToken & RefreshToken 재발급 완료: userId={}", userId);
 
     return TokenResponse.builder()
         .accessToken("Bearer " + newAccessToken)
@@ -98,14 +103,14 @@ public class AuthService {
         .build();
   }
 
-  /** ✅ 로그아웃 (AccessToken 자동 인식) */
+  /** 로그아웃 (AccessToken 자동 인식) */
   public void logout(Long userId) {
     if (userId == null) {
       throw new CustomException(UserErrorCode.JWT_INVALID);
     }
 
     userTokenRepository.findById(userId).ifPresent(userTokenRepository::delete);
-    log.info("🚪 로그아웃 완료: userId={} (RefreshToken 삭제)", userId);
+    log.info("로그아웃 완료: userId={} (RefreshToken 삭제)", userId);
   }
 
   public boolean isBlacklisted(String token) {

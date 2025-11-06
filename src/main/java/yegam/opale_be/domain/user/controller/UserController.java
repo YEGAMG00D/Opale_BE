@@ -15,6 +15,21 @@ import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.exception.GlobalErrorCode;
 import yegam.opale_be.global.response.BaseResponse;
 
+
+/**
+ * UserController
+ *
+ *  ◎ 회원 정보 관련 API 요청을 받는 Controller.
+ *  - 요청 경로: /api/users
+ *
+ *  1) 이메일 중복 확인
+ *  2) 닉네임 중복 확인
+ *  3) 회원가입
+ *  4) 내 정보 조회
+ *  5) 내 정보 수정
+ *  6) 비밀번호 변경, 회원 탈퇴
+ *
+ */
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "User", description = "회원 관리 API")
