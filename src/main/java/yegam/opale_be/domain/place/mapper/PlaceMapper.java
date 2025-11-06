@@ -4,12 +4,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.place.dto.response.detail.*;
-import yegam.opale_be.domain.place.dto.response.list.PlaceListResponseDto;
-import yegam.opale_be.domain.place.dto.response.list.PlaceSummaryResponseDto;
+import yegam.opale_be.domain.place.dto.response.list.*;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,6 +58,8 @@ public class PlaceMapper {
         .address(p.getAddress())
         .telno(p.getTelno())
         .stageCount(p.getStageCount())
+        .latitude(p.getLa())
+        .longitude(p.getLo())
         .build();
   }
 
@@ -72,6 +74,7 @@ public class PlaceMapper {
         .opende(p.getOpende())
         .seatscale(p.getSeatscale())
         .relateurl(p.getRelateurl())
+        .stageCount(p.getStageCount())
         .la(p.getLa())
         .lo(p.getLo())
         .build();
@@ -123,8 +126,7 @@ public class PlaceMapper {
         .build();
   }
 
-
-  /** ✅ 공통 리스트 Response 변환 */
+  /** ✅ 공통 리스트 Response 변환 (공연관/공연 등) */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
         .placeId(p.getPlaceId())
@@ -139,4 +141,39 @@ public class PlaceMapper {
     if (keywords == null || keywords.isBlank()) return List.of();
     return List.of(keywords.split(","));
   }
+
+  /** ✅ 좌표 기반 공연장 목록 변환 */
+  public PlaceNearbyListResponseDto toNearbyListDto(
+      List<Object[]> rows,
+      BigDecimal latitude,
+      BigDecimal longitude,
+      int radius,
+      String sortType
+  ) {
+    List<PlaceNearbyResponseDto> places = rows.stream()
+        .map(r -> PlaceNearbyResponseDto.builder()
+            .placeId((String) r[0])
+            .name((String) r[1])
+            .address((String) r[2])
+            .latitude((BigDecimal) r[3])   // ✅ BigDecimal 그대로 사용
+            .longitude((BigDecimal) r[4])  // ✅ BigDecimal 그대로 사용
+            .distance(((Number) r[5]).doubleValue()) // distance는 double 그대로
+            .build())
+        .collect(Collectors.toList());
+
+    return PlaceNearbyListResponseDto.builder()
+        .totalCount(places.size())
+        .currentPage(1)
+        .pageSize(places.size())
+        .totalPages(1)
+        .sortType(sortType)
+        .searchLatitude(latitude)
+        .searchLongitude(longitude)
+        .searchRadius(radius)
+        .places(places)
+        .build();
+  }
+
+
+
 }

@@ -59,7 +59,7 @@ public class Place {
   @Column(name = "store")
   private Boolean store;
 
-  @Column(name = "nolitbang")
+  @Column(name = "nolibang")
   private Boolean nolibang;
 
   @Column(name = "suyu")

@@ -6,9 +6,12 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import yegam.opale_be.domain.place.dto.request.PlaceListRequestDto;
+import yegam.opale_be.domain.place.dto.request.PlaceNearbyRequestDto;
 import yegam.opale_be.domain.place.dto.request.PlaceSearchRequestDto;
 import yegam.opale_be.domain.place.dto.response.detail.*;
 import yegam.opale_be.domain.place.dto.response.list.PlaceListResponseDto;
+import yegam.opale_be.domain.place.dto.response.list.PlaceNearbyListResponseDto;
 import yegam.opale_be.domain.place.service.PlaceService;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 import yegam.opale_be.global.response.BaseResponse;
@@ -21,25 +24,27 @@ public class PlaceController {
 
   private final PlaceService placeService;
 
+
   /** ✅ 공연장 목록 조회 */
-  @Operation(summary = "공연장 목록 조회", description = "검색어, 지역, 장르, 정렬 기준에 따라 공연장 목록을 조회합니다.")
+  @Operation(summary = "공연장 목록 조회", description = "검색어, 지역, 정렬 기준에 따라 공연장 목록을 조회합니다.")
   @PostMapping
   public ResponseEntity<BaseResponse<PlaceListResponseDto>> getPlaceList(
-      @RequestBody @Valid PlaceSearchRequestDto dto
+      @RequestBody @Valid PlaceListRequestDto dto
   ) {
     PlaceListResponseDto response = placeService.getPlaceList(dto);
     return ResponseEntity.ok(BaseResponse.success("공연장 목록 조회 성공", response));
   }
 
   /** ✅ 좌표 기반 근처 공연장 목록 조회 */
-  @Operation(summary = "좌표 기반 근처 공연장 목록 조회", description = "지도 기반으로 반경 내 공연장을 조회합니다.")
+  @Operation(summary = "좌표 기반 근처 공연장 목록 조회", description = "지도 기반으로 반경 내 공연장을 조회합니다. ('거리순' 또는 '이름순' 정렬 가능)")
   @PostMapping("/nearby")
-  public ResponseEntity<BaseResponse<PlaceListResponseDto>> getNearbyPlaces(
-      @RequestBody @Valid PlaceSearchRequestDto dto
+  public ResponseEntity<BaseResponse<PlaceNearbyListResponseDto>> getNearbyPlaces(
+      @RequestBody @Valid PlaceNearbyRequestDto dto
   ) {
-    PlaceListResponseDto response = placeService.getNearbyPlaces(dto);
+    PlaceNearbyListResponseDto response = placeService.getNearbyPlaces(dto);
     return ResponseEntity.ok(BaseResponse.success("근처 공연장 목록 조회 성공", response));
   }
+
 
   /** ✅ 공연장 기본 정보 조회 */
   @Operation(summary = "공연장 기본 정보 조회", description = "공연장 ID를 통해 기본 정보를 조회합니다.")
