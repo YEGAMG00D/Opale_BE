@@ -39,6 +39,11 @@ public class UserController {
   private final UserService userService;
 
   /** 이메일 중복 확인 */
+  /**
+   *
+   * @param {email}
+   * @return
+   */
   @Operation(summary = "이메일 중복 확인", description = "사용자 이메일이 중복되는지 확인하는 API")
   @PostMapping("/check-duplicate")
   public ResponseEntity<BaseResponse<String>> checkDuplicate(@RequestBody @Valid CheckEmailRequestDto dto) {
@@ -48,6 +53,11 @@ public class UserController {
   }
 
   /** 닉네임 중복 확인 */
+  /**
+   *
+   * @param {nickname}
+   * @return
+   */
   @Operation(summary = "닉네임 중복 확인", description = "사용자 닉네임이 중복되는지 확인하는 API")
   @PostMapping("/check-nickname")
   public ResponseEntity<BaseResponse<CheckNicknameResponseDto>> checkDuplicateNickname(
@@ -62,6 +72,11 @@ public class UserController {
 
 
   /** 회원가입 */
+  /**
+   *
+   * @param {email, password, name, birth, gender, phone, address1, address2, nickname}
+   * @return
+   */
   @Operation(summary = "회원가입", description = "사용자 회원가입을 위한 API")
   @PostMapping
   public ResponseEntity<BaseResponse<UserResponseDto>> signUp(@RequestBody @Valid UserSignUpRequestDto dto) {
@@ -70,6 +85,11 @@ public class UserController {
   }
 
   /** 내 정보 조회 */
+  /**
+   *
+   * @param userId
+   * @return {userId, email, nickname, name, birth, phone, address1, address2, role, createdAt}
+   */
   @Operation(summary = "사용자 본인 정보 조회", description = "사용자 본인의 정보 조회를 위한 API")
   @GetMapping("/me")
   public ResponseEntity<BaseResponse<UserResponseDto>> getMyInfo(@AuthenticationPrincipal Long userId) {
@@ -79,6 +99,12 @@ public class UserController {
   }
 
   /** 내 정보 수정 */
+  /**
+   *
+   * @param userId
+   * @param {phone, address1, address2, nickname}
+   * @return {userId, email, nickname, name, birth, phone, address1, address2, role, createdAt}
+   */
   @Operation(summary = "내 정보 수정", description = "사용자 본인의 정보를 수정합니다. (닉네임 중복 검사 포함)")
   @PutMapping("/me")
   public ResponseEntity<BaseResponse<UserResponseDto>> updateMyInfo(
@@ -90,6 +116,12 @@ public class UserController {
   }
 
   /** 비밀번호 변경 */
+  /**
+   *
+   * @param userId
+   * @param {currentPassword, newPassword}
+   * @return
+   */
   @Operation(summary = "비밀번호 변경", description = "사용자의 비밀번호를 변경합니다.")
   @PatchMapping("/me/password")
   public ResponseEntity<BaseResponse<String>> changePassword(
@@ -101,6 +133,12 @@ public class UserController {
   }
 
   /** 회원 탈퇴 */
+  /**
+   *
+   * @param userId
+   * @param {password}
+   * @return
+   */
   @Operation(summary = "회원 탈퇴", description = "사용자 본인의 계정을 비활성화(soft delete)합니다.")
   @PatchMapping("/me")
   public ResponseEntity<BaseResponse<String>> deleteUser(

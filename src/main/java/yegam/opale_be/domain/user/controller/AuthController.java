@@ -37,6 +37,11 @@ public class AuthController {
   private final AuthService authService;
 
   /** 로그인 */
+  /**
+   *
+   * @param {email, password}
+   * @return
+   */
   @Operation(
       summary = "사용자 로그인",
       description = "이메일과 비밀번호로 로그인하여 AccessToken과 RefreshToken을 발급받습니다.",

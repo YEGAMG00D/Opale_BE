@@ -36,6 +36,11 @@ public class AdminUserController {
   private final AdminUserService adminUserService;
 
   /** 전체 회원 목록 확인 */
+  /**
+   *
+   * @param includeAdmin
+   * @return {totalCount, users}
+   */
   @Operation(
       summary = "(운영자) 전체 회원 목록 확인",
       description = "탈퇴 회원 포함 전체 회원 목록을 조회합니다. " +
@@ -55,7 +60,13 @@ public class AdminUserController {
     return ResponseEntity.ok(BaseResponse.success("전체 회원 조회 성공", response));
   }
 
+
   /** 특정 회원 상세 조회 */
+  /**
+   *
+   * @param userId
+   * @return {userId, email, name, nickname, birth, role, isDeleted, createdAt}
+   */
   @Operation(
       summary = "(운영자) 특정 회원 상세 조회",
       description = "회원 ID로 특정 회원의 상세 정보를 조회합니다.",
