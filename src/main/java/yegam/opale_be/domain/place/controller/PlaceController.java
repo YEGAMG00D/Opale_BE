@@ -42,6 +42,11 @@ public class PlaceController {
 
 
   /** 공연장 목록 조회 */
+  /**
+   *
+   * @param {area, keyword, sortType, page, size}
+   * @return {totalCount, currentPage, pageSize, totalPages, hasNext, hasPrev, places}
+   */
   @Operation(summary = "공연장 목록 조회", description = "검색어, 지역, 정렬 기준에 따라 공연장 목록을 조회합니다.")
   @PostMapping
   public ResponseEntity<BaseResponse<PlaceListResponseDto>> getPlaceList(
@@ -52,6 +57,11 @@ public class PlaceController {
   }
 
   /** 좌표 기반 근처 공연장 목록 조회 */
+  /**
+   *
+   * @param {latitude, longitude, radius, sortType, page, size}
+   * @return "totalCount, currentPage, pageSize, totalPages, sortType, searchLatitude, searchLongitude, searchRadius, places"
+   */
   @Operation(summary = "좌표 기반 근처 공연장 목록 조회", description = "지도 기반으로 반경 내 공연장을 조회합니다. ('거리순' 또는 '이름순' 정렬 가능)")
   @PostMapping("/nearby")
   public ResponseEntity<BaseResponse<PlaceNearbyListResponseDto>> getNearbyPlaces(
@@ -63,6 +73,11 @@ public class PlaceController {
 
 
   /** 공연장 기본 정보 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {placeId, name, address, telno, fcltychartr, opende, seatscale, stageCount, la, lo, relateurl}
+   */
   @Operation(summary = "공연장 기본 정보 조회", description = "공연장 ID를 통해 기본 정보를 조회합니다.")
   @GetMapping("/{placeId}/basic")
   public ResponseEntity<BaseResponse<PlaceBasicResponseDto>> getPlaceBasic(
@@ -73,6 +88,11 @@ public class PlaceController {
   }
 
   /** 공연장 내 공연관 목록 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {stageId, name, seatscale, stagearea, disabledseatscale, stageorchat, stagepracat, stagedresat, stageoutdrat}
+   */
   @Operation(summary = "공연장 내 공연관(무대) 목록 조회", description = "공연장에 포함된 공연관(무대) 정보를 조회합니다.")
   @GetMapping("/{placeId}/stages")
   public ResponseEntity<BaseResponse<BasePlaceListResponseDto<PlaceStageResponseDto>>> getPlaceStages(
@@ -83,6 +103,11 @@ public class PlaceController {
   }
 
   /** 공연장 편의시설 정보 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {performanceId, title, genrenm, poster, startDate, endDate, prfstate, aiSummary, keywords}
+   */
   @Operation(summary = "공연장 편의시설 정보 조회", description = "공연장 내의 편의시설(Y/N)을 조회합니다.")
   @GetMapping("/{placeId}/facilities")
   public ResponseEntity<BaseResponse<PlaceFacilityResponseDto>> getPlaceFacilities(
@@ -93,6 +118,11 @@ public class PlaceController {
   }
 
   /** 공연장별 공연 목록 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {performanceId, title, genrenm, poster, startDate, endDate, prfstate, aiSummary, keywords}
+   */
   @Operation(summary = "공연장별 공연 목록 조회", description = "특정 공연장에서 진행되는 공연 목록을 조회합니다.")
   @GetMapping("/{placeId}/performances")
   public ResponseEntity<BaseResponse<BasePlaceListResponseDto<PlacePerformanceResponseDto>>> getPlacePerformances(

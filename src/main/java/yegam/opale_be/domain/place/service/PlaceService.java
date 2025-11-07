@@ -98,6 +98,11 @@ public class PlaceService {
   }
 
   /** 공연장 편의시설 목록 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {restaurant, cafe, store, nolibang, suyu, parkbarrier, restbarrier, runwbarrier, elevbarrier, parkinglot}
+   */
   public PlaceFacilityResponseDto getPlaceFacilities(String placeId) {
     Place place = findPlace(placeId);
     return placeMapper.toPlaceFacilityDto(place);
