@@ -26,7 +26,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  /** ✅ 커스텀 예외 */
+  /** 커스텀 예외 */
   @ExceptionHandler(CustomException.class)
   public ResponseEntity<BaseResponse<Object>> handleCustomException(CustomException ex) {
     BaseErrorCode errorCode = ex.getErrorCode();
@@ -35,14 +35,14 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(errorCode.getStatus().value(), ex.getMessage()));
   }
 
-  /** ✅ Validation 실패 (DTO별 필드 순서 정렬) */
+  /** Validation 실패 (DTO별 필드 순서 정렬) */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<BaseResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
 
     Object target = ex.getBindingResult().getTarget();
     List<String> fieldOrder;
 
-    // ✅ DTO별 필드 순서 정의
+    // DTO별 필드 순서 정의
     if (target instanceof UserSignUpRequestDto) {
       fieldOrder = List.of("email", "password", "name", "birth", "gender", "phone", "address1", "address2", "nickname");
     } else if (target instanceof PasswordChangeRequestDto) {
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
     return ResponseEntity.badRequest().body(BaseResponse.error(400, errorMessages));
   }
 
-  /** ✅ 인가(권한) 실패 - 접근 권한 없음 (403) */
+  /** 인가(권한) 실패 - 접근 권한 없음 (403) */
   @ExceptionHandler({AccessDeniedException.class, AuthorizationDeniedException.class})
   public ResponseEntity<BaseResponse<Object>> handleAccessDenied(Exception ex) {
     log.warn("권한 부족 (403): {}", ex.getMessage());
@@ -71,7 +71,7 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.FORBIDDEN.value(), "접근 권한이 없습니다. (ADMIN 전용 API)"));
   }
 
-  /** ✅ 잘못된 HTTP Method */
+  /** 잘못된 HTTP Method */
   @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
   public ResponseEntity<BaseResponse<Object>> handleMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
     log.warn("잘못된 HTTP Method 요청: {}", ex.getMessage());
@@ -79,7 +79,7 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.METHOD_NOT_ALLOWED.value(), "지원하지 않는 HTTP Method입니다."));
   }
 
-  /** ✅ 파라미터 누락 */
+  /** 파라미터 누락 */
   @ExceptionHandler(MissingServletRequestParameterException.class)
   public ResponseEntity<BaseResponse<Object>> handleMissingParam(MissingServletRequestParameterException ex) {
     log.warn("필수 파라미터 누락: {}", ex.getMessage());
@@ -87,7 +87,7 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.BAD_REQUEST.value(), "요청에 필요한 파라미터가 누락되었습니다."));
   }
 
-  /** ✅ JSON 형식 오류 */
+  /** JSON 형식 오류 */
   @ExceptionHandler(HttpMessageNotReadableException.class)
   public ResponseEntity<BaseResponse<Object>> handleInvalidJson(HttpMessageNotReadableException ex) {
     log.warn("잘못된 JSON 형식 요청: {}", ex.getMessage());
@@ -95,7 +95,7 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.BAD_REQUEST.value(), "잘못된 JSON 형식의 요청입니다."));
   }
 
-  /** ✅ 잘못된 URL */
+  /** 잘못된 URL */
   @ExceptionHandler(NoHandlerFoundException.class)
   public ResponseEntity<BaseResponse<Object>> handleNotFoundUrl(NoHandlerFoundException ex) {
     log.warn("잘못된 URL 요청: {}", ex.getMessage());
@@ -103,7 +103,7 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.NOT_FOUND.value(), "요청한 URL은 존재하지 않습니다."));
   }
 
-  /** ✅ DB 접근 오류 (예: null ID 접근) */
+  /** DB 접근 오류 (예: null ID 접근) */
   @ExceptionHandler(InvalidDataAccessApiUsageException.class)
   public ResponseEntity<BaseResponse<Object>> handleInvalidDataAccess(InvalidDataAccessApiUsageException ex) {
     log.warn("DB 접근 오류 발생: {}", ex.getMessage());
@@ -111,10 +111,10 @@ public class GlobalExceptionHandler {
         .body(BaseResponse.error(HttpStatus.UNAUTHORIZED.value(), "로그인이 필요합니다. (잘못된 사용자 접근 또는 토큰 없음)"));
   }
 
-  /** ✅ 서버 내부 오류 (기타 모든 예외) */
+  /** 서버 내부 오류 (기타 모든 예외) */
   @ExceptionHandler(Exception.class)
   public ResponseEntity<BaseResponse<Object>> handleGeneralException(Exception ex) {
-    log.error("🚨 서버 내부 오류 발생", ex);
+    log.error("서버 내부 오류 발생", ex);
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(BaseResponse.error(500, "예상치 못한 서버 오류가 발생했습니다."));
   }

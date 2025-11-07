@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Component
 public class PlaceMapper {
 
-  /** ✅ 페이지 변환 */
+  /** 페이지 변환 */
   public PlaceListResponseDto toPagedPlaceListDto(Page<Place> placePage) {
     List<PlaceSummaryResponseDto> list = placePage.getContent().stream()
         .map(this::toPlaceSummaryDto)
@@ -33,7 +33,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 전체 리스트 변환 */
+  /** 전체 리스트 변환 */
   public PlaceListResponseDto toPlaceListDto(List<Place> places) {
     List<PlaceSummaryResponseDto> list = places.stream()
         .map(this::toPlaceSummaryDto)
@@ -50,7 +50,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장 요약 DTO */
+  /** 공연장 요약 DTO */
   public PlaceSummaryResponseDto toPlaceSummaryDto(Place p) {
     return PlaceSummaryResponseDto.builder()
         .placeId(p.getPlaceId())
@@ -63,7 +63,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장 기본 정보 DTO */
+  /** 공연장 기본 정보 DTO */
   public PlaceBasicResponseDto toPlaceBasicDto(Place p) {
     return PlaceBasicResponseDto.builder()
         .placeId(p.getPlaceId())
@@ -80,7 +80,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장 편의시설 DTO */
+  /** 공연장 편의시설 DTO */
   public PlaceFacilityResponseDto toPlaceFacilityDto(Place p) {
     return PlaceFacilityResponseDto.builder()
         .restaurant(p.getRestaurant())
@@ -96,7 +96,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연관 DTO */
+  /** 공연관 DTO */
   public PlaceStageResponseDto toPlaceStageDto(PlaceStage s) {
     return PlaceStageResponseDto.builder()
         .stageId(s.getStageId())
@@ -111,7 +111,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장별 공연 DTO */
+  /** 공연장별 공연 DTO */
   public PlacePerformanceResponseDto toPlacePerformanceDto(Performance p) {
     return PlacePerformanceResponseDto.builder()
         .performanceId(p.getPerformanceId())
@@ -126,7 +126,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공통 리스트 Response 변환 (공연관/공연 등) */
+  /** 공통 리스트 Response 변환 (공연관/공연 등) */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
         .placeId(p.getPlaceId())
@@ -142,7 +142,7 @@ public class PlaceMapper {
     return List.of(keywords.split(","));
   }
 
-  /** ✅ 좌표 기반 공연장 목록 변환 */
+  /** 좌표 기반 공연장 목록 변환 */
   public PlaceNearbyListResponseDto toNearbyListDto(
       List<Object[]> rows,
       BigDecimal latitude,
@@ -155,9 +155,9 @@ public class PlaceMapper {
             .placeId((String) r[0])
             .name((String) r[1])
             .address((String) r[2])
-            .latitude((BigDecimal) r[3])   // ✅ BigDecimal 그대로 사용
-            .longitude((BigDecimal) r[4])  // ✅ BigDecimal 그대로 사용
-            .distance(((Number) r[5]).doubleValue()) // distance는 double 그대로
+            .latitude((BigDecimal) r[3])
+            .longitude((BigDecimal) r[4])
+            .distance(((Number) r[5]).doubleValue())
             .build())
         .collect(Collectors.toList());
 

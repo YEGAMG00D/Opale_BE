@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Long userId = jwtProvider.extractUserIdAsLong(token);
         String role = jwtProvider.extractUserRole(token);
 
-        // ✅ Spring Security 권한 리스트 (ROLE_ prefix 필수)
+        // Spring Security 권한 리스트
         List<SimpleGrantedAuthority> authorities = Collections.singletonList(
             new SimpleGrantedAuthority("ROLE_" + role)
         );
@@ -52,10 +52,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        log.debug("✅ JWT 인증 성공 - userId={}, role={}", userId, role);
+        log.debug("JWT 인증 성공 - userId={}, role={}", userId, role);
 
       } catch (Exception e) {
-        log.warn("❌ JWT 인증 실패: {}", e.getMessage());
+        log.warn("JWT 인증 실패: {}", e.getMessage());
         SecurityContextHolder.clearContext();
       }
     }

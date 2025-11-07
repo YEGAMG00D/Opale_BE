@@ -29,7 +29,11 @@ public class PerformanceService {
   private final PerformanceRepository performanceRepository;
   private final PerformanceMapper performanceMapper;
 
-  /** ✅ 공연 목록 조회 */
+  // ---------------------------------------------------------------------
+  // 공연 목록 용
+  // ---------------------------------------------------------------------
+
+  /** 공연 목록 조회 */
   public PerformanceListResponseDto getPerformanceList(PerformanceSearchRequestDto dto) {
     String genre = emptyToNull(dto.getGenre());
     String keyword = emptyToNull(dto.getKeyword());
@@ -44,19 +48,19 @@ public class PerformanceService {
     return performanceMapper.toPagedPerformanceListDto(performancePage);
   }
 
-  /** ✅ 인기 공연 조회 */
+  /** 인기 공연 조회 */
   public PerformanceListResponseDto getTopPerformances() {
     List<Performance> performances = performanceRepository.findTop10ByOrderByUpdatedateDesc();
     return performanceMapper.toPerformanceListDto(performances);
   }
 
-  /** ✅ 오늘 공연 조회 */
+  /** 오늘 공연 조회 */
   public PerformanceListResponseDto getTodayPerformances(String type) {
     List<Performance> performances = performanceRepository.findPerformancesByTypeAndDate(type, LocalDate.now());
     return performanceMapper.toPerformanceListDto(performances);
   }
 
-  /** ✅ 공연 기본 정보 조회 */
+  /** 공연 기본 정보 조회 */
   public PerformanceBasicResponseDto getPerformanceBasic(String performanceId) {
     Performance performance = performanceRepository.findById(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
@@ -64,10 +68,10 @@ public class PerformanceService {
   }
 
   // ---------------------------------------------------------------------
-  // 🎭 상세 정보용 리스트 응답 (BaseListResponseDto 적용)
+  // 공연 상세 페이지 용
   // ---------------------------------------------------------------------
 
-  /** ✅ 공연 예매처 목록 */
+  /** 공연 예매처 목록 */
   public BasePerformanceListResponseDto<PerformanceRelationResponseDto> getPerformanceRelations(String performanceId) {
     Performance p = performanceRepository.findByIdWithRelations(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
@@ -77,7 +81,7 @@ public class PerformanceService {
     return performanceMapper.toBaseListResponse(p, list);
   }
 
-  /** ✅ 공연 영상 목록 */
+  /** 공연 영상 목록(유튜브) */
   public BasePerformanceListResponseDto<PerformanceVideoResponseDto> getPerformanceVideos(String performanceId) {
     Performance p = performanceRepository.findByIdWithVideos(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
@@ -87,7 +91,7 @@ public class PerformanceService {
     return performanceMapper.toBaseListResponse(p, list);
   }
 
-  /** ✅ 공연 수집 이미지 목록 */
+  /** 공연 수집 이미지 목록(크롤링) */
   public BasePerformanceListResponseDto<PerformanceImageResponseDto> getPerformanceImages(String performanceId) {
     Performance p = performanceRepository.findByIdWithImages(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
@@ -97,7 +101,7 @@ public class PerformanceService {
     return performanceMapper.toBaseListResponse(p, list);
   }
 
-  /** ✅ 공연 소개 이미지 목록 */
+  /** 공연 소개 이미지 목록(Kopis) */
   public BasePerformanceListResponseDto<PerformanceInfoImageResponseDto> getPerformanceInfoImages(String performanceId) {
     Performance p = performanceRepository.findByIdWithInfoImages(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
@@ -111,7 +115,7 @@ public class PerformanceService {
     return performanceMapper.toBaseListResponse(p, list);
   }
 
-  /** ✅ 공연 예매 정보 조회 */
+  /** 공연 예매 정보 조회 */
   public PerformanceDetailResponseDto getPerformanceBooking(String performanceId) {
     Performance p = performanceRepository.findById(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
