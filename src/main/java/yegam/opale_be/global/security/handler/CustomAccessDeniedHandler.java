@@ -14,7 +14,7 @@ import yegam.opale_be.global.response.BaseResponse;
 import java.io.IOException;
 
 /**
- * ✅ 인증은 되었지만 권한이 부족할 때 발생 (403)
+ * 인증은 되었지만 권한이 부족할 때 발생 (403)
  */
 @Slf4j
 @Component

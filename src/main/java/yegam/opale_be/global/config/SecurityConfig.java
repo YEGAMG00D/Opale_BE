@@ -52,14 +52,14 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
 
-        // ✅ 인증 & 인가 실패 핸들러 연결
+        // 인증 & 인가 실패 핸들러 연결
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(authenticationEntryPoint) // 401
             .accessDeniedHandler(accessDeniedHandler) // 403
         )
-        .anonymous(AbstractHttpConfigurer::disable) // ✅ 익명 사용자로 처리하지 않게
+        .anonymous(AbstractHttpConfigurer::disable) // 익명 사용자로 처리하지 않게
 
-        // ✅ JWT 필터 등록
+        // JWT 필터 등록
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
