@@ -3,6 +3,7 @@ package yegam.opale_be.global.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -37,6 +38,7 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            // Swagger, 공개 엔드포인트
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(
                 "/api/auth/login",
@@ -47,19 +49,28 @@ public class SecurityConfig {
                 "/api/email/verify",
                 "/health",
                 "/api/performances/**",
-                "/api/places/**"
+                "/api/places/**",
+                "/ws/**"
             ).permitAll()
+
+            // 채팅방 목록(GET)은 로그인 없이 접근 가능
+            .requestMatchers(HttpMethod.GET, "/api/chat/rooms").permitAll()
+
+            // 나머지 채팅 관련 요청은 로그인 필요
+            .requestMatchers("/api/chat/**").authenticated()
+
+            // 나머지 요청도 기본적으로 인증 필요
             .anyRequest().authenticated()
         )
 
-        // ✅ 인증 & 인가 실패 핸들러 연결
+        // 인증 & 인가 실패 핸들러 연결
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint(authenticationEntryPoint) // 401
             .accessDeniedHandler(accessDeniedHandler) // 403
         )
-        .anonymous(AbstractHttpConfigurer::disable) // ✅ 익명 사용자로 처리하지 않게
+        .anonymous(AbstractHttpConfigurer::disable) // 익명 사용자로 처리하지 않게
 
-        // ✅ JWT 필터 등록
+        // JWT 필터 등록
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
