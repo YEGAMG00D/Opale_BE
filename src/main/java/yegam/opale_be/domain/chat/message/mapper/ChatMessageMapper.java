@@ -31,9 +31,12 @@ public class ChatMessageMapper {
         .sentAt(m.getSentAt())
         .roomId(m.getChatRoom().getRoomId())
         .roomTitle(m.getChatRoom().getTitle())
-        .roomType(m.getChatRoom().getRoomType().name())
-        .performanceTitle(m.getChatRoom().getPerformance() != null
-            ? m.getChatRoom().getPerformance().getTitle() : null)
+        .roomType(m.getChatRoom().getRoomType())
+        .performanceTitle(
+            m.getChatRoom().getPerformance() != null
+                ? m.getChatRoom().getPerformance().getTitle()
+                : null
+        )
         .build();
   }
 

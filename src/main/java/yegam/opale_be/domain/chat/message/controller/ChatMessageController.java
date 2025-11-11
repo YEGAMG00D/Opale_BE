@@ -13,6 +13,7 @@ import yegam.opale_be.domain.chat.message.dto.request.ChatMessageRequestDto;
 import yegam.opale_be.domain.chat.message.dto.response.*;
 import yegam.opale_be.domain.chat.message.service.ChatMessageService;
 import yegam.opale_be.domain.chat.room.dto.response.ChatRoomUpdateDto;
+import yegam.opale_be.domain.chat.room.mapper.ChatRoomMapper;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.exception.GlobalErrorCode;
 import yegam.opale_be.global.response.BaseResponse;
@@ -25,6 +26,7 @@ public class ChatMessageController {
 
   private final ChatMessageService chatMessageService;
   private final SimpMessagingTemplate messagingTemplate;
+  private final ChatRoomMapper chatRoomMapper;
 
   /** 과거 메시지 조회 */
   @Operation(summary = "채팅방 과거 메시지 조회", description = "특정 채팅방의 과거 메시지를 페이지 단위로 조회합니다.")
@@ -70,7 +72,12 @@ public class ChatMessageController {
     }
 
     ChatMessageResponseDto response = chatMessageService.saveMessage(userId, request);
+
+    // 메시지 전송 (방 내부 구독자)
     messagingTemplate.convertAndSend("/topic/rooms/" + response.getRoomId(), response);
-    messagingTemplate.convertAndSend("/topic/rooms", ChatRoomUpdateDto.from(response));
+
+    // 방 목록 업데이트 (mapper를 통한 변환)
+    ChatRoomUpdateDto updateDto = chatRoomMapper.toUpdateDtoFromMessage(response);
+    messagingTemplate.convertAndSend("/topic/rooms", updateDto);
   }
 }

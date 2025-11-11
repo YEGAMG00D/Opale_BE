@@ -1,14 +1,12 @@
 package yegam.opale_be.domain.chat.room.mapper;
 
 import org.springframework.stereotype.Component;
+import yegam.opale_be.domain.chat.message.dto.response.ChatMessageResponseDto;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomCreateRequestDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomListResponseDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomResponseDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomUpdateDto;
+import yegam.opale_be.domain.chat.room.dto.response.*;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.user.entity.User;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +39,7 @@ public class ChatRoomMapper {
         .description(room.getDescription())
         .performanceId(room.getPerformance() != null ? room.getPerformance().getPerformanceId() : null)
         .performanceTitle(room.getPerformance() != null ? room.getPerformance().getTitle() : null)
-        .roomType(room.getRoomType().name())
+        .roomType(room.getRoomType())
         .isPublic(room.getIsPublic())
         .thumbnailUrl(room.getThumbnailUrl())
         .visitCount(room.getVisitCount())
@@ -64,15 +62,43 @@ public class ChatRoomMapper {
         .build();
   }
 
-  /** 실시간 업데이트 DTO 변환 (방 입장 / 메시지 갱신 broadcast 용) */
+  /** ChatRoom → ChatRoomUpdateDto 변환 */
   public ChatRoomUpdateDto toUpdateDto(ChatRoom room) {
     return ChatRoomUpdateDto.builder()
         .roomId(room.getRoomId())
         .title(room.getTitle())
+        .roomType(room.getRoomType())
         .visitCount(room.getVisitCount())
         .lastMessage(room.getLastMessage())
         .lastMessageTime(room.getLastMessageTime())
         .isActive(room.getIsActive())
+        .build();
+  }
+
+  /** ChatRoomResponseDto → ChatRoomUpdateDto 변환 */
+  public ChatRoomUpdateDto toUpdateDtoFromResponse(ChatRoomResponseDto response) {
+    if (response == null) return null;
+    return ChatRoomUpdateDto.builder()
+        .roomId(response.getRoomId())
+        .title(response.getTitle())
+        .roomType(response.getRoomType())
+        .visitCount(response.getVisitCount())
+        .lastMessage(response.getLastMessage())
+        .lastMessageTime(response.getLastMessageTime())
+        .isActive(response.getIsActive())
+        .build();
+  }
+
+  /** ChatMessageResponseDto → ChatRoomUpdateDto 변환 */
+  public ChatRoomUpdateDto toUpdateDtoFromMessage(ChatMessageResponseDto messageResponse) {
+    if (messageResponse == null) return null;
+    return ChatRoomUpdateDto.builder()
+        .roomId(messageResponse.getRoomId())
+        .roomType(null)
+        .title(null)
+        .lastMessage(messageResponse.getMessage())
+        .lastMessageTime(messageResponse.getSentAt())
+        .isActive(true)
         .build();
   }
 }

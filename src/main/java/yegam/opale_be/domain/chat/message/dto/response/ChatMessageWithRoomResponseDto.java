@@ -2,9 +2,8 @@ package yegam.opale_be.domain.chat.message.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
+import yegam.opale_be.domain.chat.room.entity.RoomType;
 import java.time.LocalDateTime;
-
-// 내가 보낸 채팅 메시지 조회용 //
 
 @Getter
 @Setter
@@ -30,7 +29,7 @@ public class ChatMessageWithRoomResponseDto {
   private String roomTitle;
 
   @Schema(description = "채팅방 타입", example = "PERFORMANCE_PUBLIC")
-  private String roomType;
+  private RoomType roomType;
 
   @Schema(description = "공연명 (공연방일 경우)", example = "Wicked")
   private String performanceTitle;

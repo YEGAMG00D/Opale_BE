@@ -2,8 +2,7 @@ package yegam.opale_be.domain.chat.room.dto.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
-import yegam.opale_be.domain.chat.message.dto.response.ChatMessageResponseDto;
-
+import yegam.opale_be.domain.chat.room.entity.RoomType;
 import java.time.LocalDateTime;
 
 @Getter
@@ -20,6 +19,9 @@ public class ChatRoomUpdateDto {
   @Schema(description = "채팅방 제목", example = "위키드 실시간 톡방")
   private String title;
 
+  @Schema(description = "방 타입", example = "PERFORMANCE_PUBLIC")
+  private RoomType roomType;
+
   @Schema(description = "최근 메시지", example = "오늘 공연 최고였어요!")
   private String lastMessage;
 
@@ -31,30 +33,4 @@ public class ChatRoomUpdateDto {
 
   @Schema(description = "누적 방문자 수", example = "128")
   private Integer visitCount;
-
-  // ChatRoomResponseDto 변환 (기존 유지)
-  public static ChatRoomUpdateDto from(ChatRoomResponseDto response) {
-    if (response == null) return null;
-
-    return ChatRoomUpdateDto.builder()
-        .roomId(response.getRoomId())
-        .title(response.getTitle())
-        .lastMessage(response.getLastMessage())
-        .lastMessageTime(response.getLastMessageTime())
-        .isActive(response.getIsActive())
-        .build();
-  }
-
-  // ChatMessageResponseDto 변환도 허용
-  public static ChatRoomUpdateDto from(ChatMessageResponseDto messageResponse) {
-    if (messageResponse == null) return null;
-
-    return ChatRoomUpdateDto.builder()
-        .roomId(messageResponse.getRoomId())
-        .title(null)
-        .lastMessage(messageResponse.getMessage())
-        .lastMessageTime(messageResponse.getSentAt())
-        .isActive(true)
-        .build();
-  }
 }

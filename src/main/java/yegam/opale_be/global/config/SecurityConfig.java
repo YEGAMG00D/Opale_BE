@@ -53,7 +53,11 @@ public class SecurityConfig {
                 "/ws/**"
             ).permitAll()
 
-            // 채팅방 목록(GET)은 로그인 없이 접근 가능
+            // 오픈 채팅방(public) + 메시지 조회 허용
+            .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/chat/messages/**").permitAll()
+
+            // 채팅방 목록(GET)도 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms").permitAll()
 
             // 나머지 채팅 관련 요청은 로그인 필요
@@ -68,7 +72,6 @@ public class SecurityConfig {
             .authenticationEntryPoint(authenticationEntryPoint) // 401
             .accessDeniedHandler(accessDeniedHandler) // 403
         )
-        .anonymous(AbstractHttpConfigurer::disable) // 익명 사용자로 처리하지 않게
 
         // JWT 필터 등록
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

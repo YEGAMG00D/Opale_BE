@@ -7,9 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomCreateRequestDto;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomJoinRequestDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomListResponseDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomResponseDto;
-import yegam.opale_be.domain.chat.room.dto.response.ChatRoomUpdateDto;
+import yegam.opale_be.domain.chat.room.dto.response.*;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.chat.room.entity.RoomType;
 import yegam.opale_be.domain.chat.room.exception.ChatRoomErrorCode;
@@ -37,12 +35,10 @@ public class ChatRoomService {
   private final SimpMessagingTemplate messagingTemplate;
 
   /* ============================================================
-      1. 채팅방 생성 (로그인한 사용자만 가능)
+      1. 채팅방 생성
      ============================================================ */
   @Transactional
   public ChatRoomResponseDto createRoom(Long userId, ChatRoomCreateRequestDto dto) {
-
-    // ✅ 운영자 계정 매핑 로직
     Long creatorId = (dto.getCreatorId() != null && dto.getCreatorId() == -1) ? 2L : userId;
 
     User creator = userRepository.findById(creatorId)
@@ -50,8 +46,7 @@ public class ChatRoomService {
 
     Performance performance = null;
     if (dto.getPerformanceId() != null) {
-      performance = performanceRepository.findById(dto.getPerformanceId())
-          .orElse(null);
+      performance = performanceRepository.findById(dto.getPerformanceId()).orElse(null);
     }
 
     ChatRoom room = chatRoomMapper.toEntity(dto, performance, creator);
@@ -59,8 +54,6 @@ public class ChatRoomService {
 
     return chatRoomMapper.toResponseDto(room);
   }
-
-
 
   /* ============================================================
       2. 채팅방 목록 조회
@@ -116,8 +109,8 @@ public class ChatRoomService {
   }
 
   /* ============================================================
-    5. 비공개방 입장 (비밀번호 검증 + 방문자 수 증가)
-   ============================================================ */
+      5. 비공개방 입장 (비밀번호 검증 + 방문자 수 증가)
+     ============================================================ */
   @Transactional
   public ChatRoomResponseDto joinRoom(Long userId, Long roomId, ChatRoomJoinRequestDto dto) {
     if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
@@ -135,10 +128,10 @@ public class ChatRoomService {
     room.setVisitCount(room.getVisitCount() + 1);
     room.setIsActive(true);
 
-    log.info("사용자 {} 채팅방 입장 완료 - roomId={}, totalVisits={}",
-        userId, roomId, room.getVisitCount());
+    log.info("사용자 {} 채팅방 입장 완료 - roomId={}, totalVisits={}", userId, roomId, room.getVisitCount());
 
-    messagingTemplate.convertAndSend("/topic/rooms", chatRoomMapper.toUpdateDto(room));
+    ChatRoomUpdateDto updateDto = chatRoomMapper.toUpdateDto(room);
+    messagingTemplate.convertAndSend("/topic/rooms", updateDto);
 
     return chatRoomMapper.toResponseDto(room);
   }

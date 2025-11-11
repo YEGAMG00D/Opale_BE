@@ -3,6 +3,7 @@ package yegam.opale_be.domain.chat.room.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
+import yegam.opale_be.domain.chat.room.entity.RoomType;
 
 @Getter
 @Setter
@@ -28,7 +29,7 @@ public class ChatRoomResponseDto {
   private String performanceTitle;
 
   @Schema(description = "방 타입", example = "PERFORMANCE_PUBLIC")
-  private String roomType;
+  private RoomType roomType;
 
   @Schema(description = "공개 여부", example = "true")
   private Boolean isPublic;
