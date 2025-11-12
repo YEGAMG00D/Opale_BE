@@ -85,4 +85,16 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
       WHERE p.performanceId = :performanceId
   """)
   Optional<Performance> findByIdWithInfoImages(@Param("performanceId") String performanceId);
+
+  // 공연명 일부 일치 + 공연일자 기준 상연 중인 공연만 조회
+  @Query("""
+      SELECT p FROM Performance p
+      WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        AND (:date IS NULL OR :date BETWEEN p.startDate AND p.endDate)
+      ORDER BY LENGTH(p.title) ASC
+      """)
+  Optional<Performance> findFirstByTitleAndDateRange(
+      @Param("keyword") String keyword,
+      @Param("date") LocalDate date
+  );
 }

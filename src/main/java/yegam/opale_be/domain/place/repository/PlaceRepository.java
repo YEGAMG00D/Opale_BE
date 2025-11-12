@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import yegam.opale_be.domain.place.entity.Place;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PlaceRepository extends JpaRepository<Place, String> {
@@ -41,4 +42,12 @@ public interface PlaceRepository extends JpaRepository<Place, String> {
       @Param("longitude") double longitude,
       @Param("radius") int radius
   );
+
+  // 공연장 이름 일부 일치 검색 (대소문자 무시)
+  @Query("""
+      SELECT p FROM Place p
+      WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
+      ORDER BY LENGTH(p.name) ASC
+      """)
+  Optional<Place> findFirstByNameContainingIgnoreCase(@Param("keyword") String keyword);
 }
