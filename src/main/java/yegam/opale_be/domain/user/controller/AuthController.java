@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yegam.opale_be.domain.user.dto.request.LoginRequestDto;
+import yegam.opale_be.domain.user.dto.response.LoginResponseDto;
 import yegam.opale_be.domain.user.service.AuthService;
 import yegam.opale_be.global.jwt.TokenResponse;
 import yegam.opale_be.global.response.BaseResponse;
@@ -33,8 +34,8 @@ public class AuthController {
       }
   )
   @PostMapping("/login")
-  public ResponseEntity<BaseResponse<TokenResponse>> login(@RequestBody @Valid LoginRequestDto dto) {
-    TokenResponse response = authService.login(dto);
+  public ResponseEntity<BaseResponse<LoginResponseDto>> login(@RequestBody @Valid LoginRequestDto dto) {
+    LoginResponseDto response = authService.login(dto);
     return ResponseEntity.ok(BaseResponse.success("로그인 성공", response));
   }
 
