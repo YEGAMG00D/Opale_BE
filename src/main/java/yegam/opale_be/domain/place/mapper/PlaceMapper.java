@@ -60,6 +60,7 @@ public class PlaceMapper {
         .stageCount(p.getStageCount())
         .latitude(p.getLa())
         .longitude(p.getLo())
+        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
         .build();
   }
 
@@ -173,7 +174,4 @@ public class PlaceMapper {
         .places(places)
         .build();
   }
-
-
-
 }

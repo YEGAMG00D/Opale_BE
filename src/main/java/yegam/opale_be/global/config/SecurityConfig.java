@@ -53,6 +53,17 @@ public class SecurityConfig {
                 "/ws/**"
             ).permitAll()
 
+            // 공연 리뷰 공개 엔드포인트 (비로그인 가능)
+            .requestMatchers(HttpMethod.GET, "/api/reviews/performances/{reviewId}").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/reviews/performances/performance/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/reviews/performances/user/**").permitAll()
+
+            // 공연장 리뷰 공개 엔드포인트 (비로그인 가능)
+            .requestMatchers(HttpMethod.GET, "/api/reviews/places/{reviewId}").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/reviews/places/place/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/reviews/places/user/**").permitAll()
+
+
             // 오픈 채팅방(public) + 메시지 조회 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/chat/messages/**").permitAll()

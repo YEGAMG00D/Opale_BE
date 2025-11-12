@@ -5,6 +5,7 @@ package yegam.opale_be.domain.review.place.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import yegam.opale_be.domain.place.entity.Place;
+import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.global.common.BaseTimeEntity;
 
@@ -23,6 +24,10 @@ public class PlaceReview extends BaseTimeEntity {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(name = "place_review_id", nullable = false)
   private Long placeReviewId;
+
+  @Column(name = "review_type", length = 20, nullable = false)
+  @Enumerated(EnumType.STRING)
+  private ReviewType reviewType;
 
   @Column(name = "title", length = 255)
   private String title;

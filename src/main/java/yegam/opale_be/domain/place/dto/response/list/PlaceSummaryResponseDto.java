@@ -32,4 +32,8 @@ public class PlaceSummaryResponseDto {
 
   @Schema(description = "공연관 수", example = "8")
   private Integer stageCount;
+
+  // ✅ 추가됨
+  @Schema(description = "공연장 평균 평점", example = "4.7")
+  private Double rating;
 }
