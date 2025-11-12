@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 @Component
 public class PerformanceMapper {
 
-  /** ✅ 공연 목록 변환 */
+  /** 공연 목록 변환 */
   public PerformanceListResponseDto toPagedPerformanceListDto(Page<Performance> performancePage) {
     List<PerformanceResponseDto> dtoList = performancePage.getContent().stream()
         .map(this::toPerformanceResponseDto)
@@ -30,7 +30,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** ✅ BaseListResponseDto 공통 변환 */
+  /** BaseListResponseDto 공통 변환 */
   public <T> BasePerformanceListResponseDto<T> toBaseListResponse(Performance performance, List<T> list) {
     return BasePerformanceListResponseDto.<T>builder()
         .performanceId(performance.getPerformanceId())
@@ -40,7 +40,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** ✅ 공연 단건 → 목록용 DTO */
+  /** 공연 단건 → 목록용 DTO */
   public PerformanceResponseDto toPerformanceResponseDto(Performance p) {
     if (p == null) return null;
     return PerformanceResponseDto.builder()
@@ -57,7 +57,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** ✅ 리스트 전용 변환 */
+  /** 리스트 전용 변환 */
   public PerformanceListResponseDto toPerformanceListDto(List<Performance> performances) {
     List<PerformanceResponseDto> dtoList = performances.stream()
         .map(this::toPerformanceResponseDto)
@@ -73,7 +73,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** ✅ 공연 기본 정보 변환 */
+  /** 공연 기본 정보 변환 */
   public PerformanceBasicResponseDto toPerformanceBasicDto(Performance p) {
     return PerformanceBasicResponseDto.builder()
         .performanceId(p.getPerformanceId())
@@ -94,7 +94,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** ✅ 공연 예매 정보 묶음 */
+  /** 공연 예매 정보 묶음 */
   public PerformanceDetailResponseDto toPerformanceDetailDto(
       Performance p,
       List<PerformanceImage> images,

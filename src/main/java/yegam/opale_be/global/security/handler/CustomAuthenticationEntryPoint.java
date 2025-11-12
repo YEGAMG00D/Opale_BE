@@ -14,7 +14,7 @@ import yegam.opale_be.global.response.BaseResponse;
 import java.io.IOException;
 
 /**
- * ✅ 인증되지 않은 사용자가 보호된 리소스에 접근할 때 발생 (401)
+ * 인증되지 않은 사용자가 보호된 리소스에 접근할 때 발생 (401)
  */
 @Slf4j
 @Component

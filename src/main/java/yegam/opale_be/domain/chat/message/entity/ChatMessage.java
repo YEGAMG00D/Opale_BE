@@ -1,13 +1,17 @@
 package yegam.opale_be.domain.chat.message.entity;
 
-
 import jakarta.persistence.*;
 import lombok.*;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.user.entity.User;
-
+import yegam.opale_be.global.common.BaseTimeEntity;
 import java.time.LocalDateTime;
 
+/**
+ * ChatMessage
+ * - 채팅방 내 개별 메시지
+ * - 삭제 플래그 포함
+ */
 @Entity
 @Table(name = "chat_messages")
 @Getter
@@ -15,7 +19,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChatMessage {
+public class ChatMessage extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,17 +37,15 @@ public class ChatMessage {
   private User user;
 
   @Lob
-  @Column(name = "contents", columnDefinition = "TEXT")
+  @Column(name = "contents", nullable = false, columnDefinition = "TEXT")
   private String contents;
 
-  @Column(name = "created_at")
-  private LocalDateTime createdAt;
+  @Column(name = "sent_at", nullable = false)
+  private LocalDateTime sentAt;
 
-  @Builder.Default
-  @Column(name = "is_deleted")
+  @Column(name = "is_deleted", nullable = false)
   private Boolean isDeleted = false;
 
   @Column(name = "deleted_at")
   private LocalDateTime deletedAt;
 }
-

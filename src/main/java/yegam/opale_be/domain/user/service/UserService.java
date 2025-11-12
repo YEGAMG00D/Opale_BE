@@ -25,13 +25,17 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
+  // ---------------------------------------------------------------------
+  // 회원가입 및 회원 정보 유효성 체크 용
+  // ---------------------------------------------------------------------
+
   /** 이메일 중복 확인 */
   @Transactional(readOnly = true)
   public boolean checkDuplicateEmail(String email) {
     return userRepository.existsByEmail(email);
   }
 
-  /** 닉네임 중복 확인 (Mapper 이용) */
+  /** 닉네임 중복 확인 */
   @Transactional(readOnly = true)
   public CheckNicknameResponseDto checkDuplicateNickname(String nickname) {
     boolean exists = userRepository.existsByNickname(nickname);
@@ -66,6 +70,11 @@ public class UserService {
 
     return userMapper.toUserResponseDto(user);
   }
+
+  
+  // ---------------------------------------------------------------------
+  // 마이페이지 용
+  // ---------------------------------------------------------------------
 
   /** 내 정보 조회 */
   @Transactional(readOnly = true)

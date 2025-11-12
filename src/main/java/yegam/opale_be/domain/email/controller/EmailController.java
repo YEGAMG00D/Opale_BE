@@ -15,6 +15,18 @@ import yegam.opale_be.domain.email.dto.response.VerifyCodeResponseDto;
 import yegam.opale_be.domain.email.service.EmailService;
 import yegam.opale_be.global.response.BaseResponse;
 
+
+
+/**
+ * EmailController
+ *
+ *  ◎ 이메일 인증 관련 API 요청을 받는 Controller.
+ *  - 요청 경로: /api/email
+ *
+ *  1) 이메일 확인 및 인증번호 발송
+ *  2) 인증번호 검증
+ *
+ */
 @RestController
 @RequestMapping("/api/email")
 @RequiredArgsConstructor
@@ -23,7 +35,12 @@ public class EmailController {
 
   private final EmailService emailService;
 
-  /** ✅ 인증번호 발송 */
+  /** 이메일 확인 및 인증번호 발송 */
+  /**
+   *
+   * @param {email}
+   * @return {email, message, expiresIn}
+   */
   @Operation(
       summary = "이메일 인증번호 발송",
       description = "입력한 이메일 주소로 인증번호를 전송합니다.",
@@ -40,7 +57,12 @@ public class EmailController {
     return ResponseEntity.ok(BaseResponse.success("인증번호 발송 성공", response));
   }
 
-  /** ✅ 인증번호 검증 */
+  /** 인증번호 검증 */
+  /**
+   *
+   * @param {email, code}
+   * @return {email, verified, message}
+   */
   @Operation(
       summary = "이메일 인증번호 검증",
       description = "입력한 이메일과 인증번호가 일치하는지 확인합니다.",
@@ -56,4 +78,7 @@ public class EmailController {
     VerifyCodeResponseDto response = emailService.verifyCode(requestDto);
     return ResponseEntity.ok(BaseResponse.success("인증번호 검증 성공", response));
   }
+
+
+
 }

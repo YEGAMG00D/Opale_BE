@@ -6,9 +6,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.user.dto.request.LoginRequestDto;
+import yegam.opale_be.domain.user.dto.response.LoginResponseDto;
+import yegam.opale_be.domain.user.dto.response.UserResponseDto;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.domain.user.entity.UserToken;
 import yegam.opale_be.domain.user.exception.UserErrorCode;
+import yegam.opale_be.domain.user.mapper.UserMapper;
 import yegam.opale_be.domain.user.repository.UserRepository;
 import yegam.opale_be.domain.user.repository.UserTokenRepository;
 import yegam.opale_be.global.exception.CustomException;
@@ -29,11 +32,12 @@ public class AuthService {
   private final UserRepository userRepository;
   private final UserTokenRepository userTokenRepository;
   private final PasswordEncoder passwordEncoder;
+  private final UserMapper userMapper;
 
   private final Set<String> blacklistedTokens = new HashSet<>();
 
   /** ✅ 로그인 */
-  public TokenResponse login(LoginRequestDto dto) {
+  public LoginResponseDto login(LoginRequestDto dto) {
     User user = userRepository.findByEmail(dto.getEmail())
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
@@ -53,9 +57,19 @@ public class AuthService {
 
     log.info("✅ 로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
 
-    return TokenResponse.builder()
+    // ✅ TokenResponse
+    TokenResponse tokenResponse = TokenResponse.builder()
         .accessToken("Bearer " + accessToken)
         .refreshToken(refreshToken)
+        .build();
+
+    // ✅ UserResponseDto
+    UserResponseDto userResponse = userMapper.toUserResponseDto(user);
+
+    // ✅ LoginResponseDto로 통합 반환
+    return LoginResponseDto.builder()
+        .token(tokenResponse)
+        .user(userResponse)
         .build();
   }
 

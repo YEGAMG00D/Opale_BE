@@ -4,19 +4,19 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.place.dto.response.detail.*;
-import yegam.opale_be.domain.place.dto.response.list.PlaceListResponseDto;
-import yegam.opale_be.domain.place.dto.response.list.PlaceSummaryResponseDto;
+import yegam.opale_be.domain.place.dto.response.list.*;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
 public class PlaceMapper {
 
-  /** ✅ 페이지 변환 */
+  /** 페이지 변환 */
   public PlaceListResponseDto toPagedPlaceListDto(Page<Place> placePage) {
     List<PlaceSummaryResponseDto> list = placePage.getContent().stream()
         .map(this::toPlaceSummaryDto)
@@ -33,7 +33,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 전체 리스트 변환 */
+  /** 전체 리스트 변환 */
   public PlaceListResponseDto toPlaceListDto(List<Place> places) {
     List<PlaceSummaryResponseDto> list = places.stream()
         .map(this::toPlaceSummaryDto)
@@ -50,7 +50,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장 요약 DTO */
+  /** 공연장 요약 DTO */
   public PlaceSummaryResponseDto toPlaceSummaryDto(Place p) {
     return PlaceSummaryResponseDto.builder()
         .placeId(p.getPlaceId())
@@ -58,10 +58,12 @@ public class PlaceMapper {
         .address(p.getAddress())
         .telno(p.getTelno())
         .stageCount(p.getStageCount())
+        .latitude(p.getLa())
+        .longitude(p.getLo())
         .build();
   }
 
-  /** ✅ 공연장 기본 정보 DTO */
+  /** 공연장 기본 정보 DTO */
   public PlaceBasicResponseDto toPlaceBasicDto(Place p) {
     return PlaceBasicResponseDto.builder()
         .placeId(p.getPlaceId())
@@ -72,12 +74,13 @@ public class PlaceMapper {
         .opende(p.getOpende())
         .seatscale(p.getSeatscale())
         .relateurl(p.getRelateurl())
+        .stageCount(p.getStageCount())
         .la(p.getLa())
         .lo(p.getLo())
         .build();
   }
 
-  /** ✅ 공연장 편의시설 DTO */
+  /** 공연장 편의시설 DTO */
   public PlaceFacilityResponseDto toPlaceFacilityDto(Place p) {
     return PlaceFacilityResponseDto.builder()
         .restaurant(p.getRestaurant())
@@ -93,7 +96,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연관 DTO */
+  /** 공연관 DTO */
   public PlaceStageResponseDto toPlaceStageDto(PlaceStage s) {
     return PlaceStageResponseDto.builder()
         .stageId(s.getStageId())
@@ -108,7 +111,7 @@ public class PlaceMapper {
         .build();
   }
 
-  /** ✅ 공연장별 공연 DTO */
+  /** 공연장별 공연 DTO */
   public PlacePerformanceResponseDto toPlacePerformanceDto(Performance p) {
     return PlacePerformanceResponseDto.builder()
         .performanceId(p.getPerformanceId())
@@ -123,8 +126,7 @@ public class PlaceMapper {
         .build();
   }
 
-
-  /** ✅ 공통 리스트 Response 변환 */
+  /** 공통 리스트 Response 변환 (공연관/공연 등) */
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
         .placeId(p.getPlaceId())
@@ -139,4 +141,39 @@ public class PlaceMapper {
     if (keywords == null || keywords.isBlank()) return List.of();
     return List.of(keywords.split(","));
   }
+
+  /** 좌표 기반 공연장 목록 변환 */
+  public PlaceNearbyListResponseDto toNearbyListDto(
+      List<Object[]> rows,
+      BigDecimal latitude,
+      BigDecimal longitude,
+      int radius,
+      String sortType
+  ) {
+    List<PlaceNearbyResponseDto> places = rows.stream()
+        .map(r -> PlaceNearbyResponseDto.builder()
+            .placeId((String) r[0])
+            .name((String) r[1])
+            .address((String) r[2])
+            .latitude((BigDecimal) r[3])
+            .longitude((BigDecimal) r[4])
+            .distance(((Number) r[5]).doubleValue())
+            .build())
+        .collect(Collectors.toList());
+
+    return PlaceNearbyListResponseDto.builder()
+        .totalCount(places.size())
+        .currentPage(1)
+        .pageSize(places.size())
+        .totalPages(1)
+        .sortType(sortType)
+        .searchLatitude(latitude)
+        .searchLongitude(longitude)
+        .searchRadius(radius)
+        .places(places)
+        .build();
+  }
+
+
+
 }
