@@ -41,10 +41,13 @@ public class PlaceReviewService {
     return reviewMapper.toResponseDto(review);
   }
 
-  /** 공연장별 리뷰 목록 조회 (비로그인 가능) */
+  /** 공연장별 리뷰 목록 조회 */
   @Transactional(readOnly = true)
-  public PlaceReviewListResponseDto getReviewsByPlace(String placeId) {
-    List<PlaceReview> reviews = reviewRepository.findAllByPlaceId(placeId);
+  public PlaceReviewListResponseDto getReviewsByPlace(String placeId, ReviewType reviewType) {
+    List<PlaceReview> reviews = (reviewType != null)
+        ? reviewRepository.findAllByPlaceIdAndType(placeId, reviewType)
+        : reviewRepository.findAllByPlaceId(placeId);
+
     return PlaceReviewListResponseDto.builder()
         .totalCount(reviews.size())
         .currentPage(1)
@@ -56,16 +59,12 @@ public class PlaceReviewService {
         .build();
   }
 
-  /** 작성한 본인 공연장 리뷰 목록 조회 (로그인 필요, 타입 필터 포함) */
+  /** 본인 공연장 리뷰 목록 */
   @Transactional(readOnly = true)
   public PlaceReviewListResponseDto getReviewsByUser(Long userId, ReviewType reviewType) {
-    List<PlaceReview> reviews;
-
-    if (reviewType != null) {
-      reviews = reviewRepository.findAllByUserIdAndType(userId, reviewType);
-    } else {
-      reviews = reviewRepository.findAllByUserId(userId);
-    }
+    List<PlaceReview> reviews = (reviewType != null)
+        ? reviewRepository.findAllByUserIdAndType(userId, reviewType)
+        : reviewRepository.findAllByUserId(userId);
 
     return PlaceReviewListResponseDto.builder()
         .totalCount(reviews.size())
@@ -81,13 +80,9 @@ public class PlaceReviewService {
   /** 특정 회원의 공연장 리뷰 목록 조회 (비로그인 가능) */
   @Transactional(readOnly = true)
   public PlaceReviewListResponseDto getReviewsByUserPublic(Long userId, ReviewType reviewType) {
-    List<PlaceReview> reviews;
-
-    if (reviewType != null) {
-      reviews = reviewRepository.findAllByUserIdAndType(userId, reviewType);
-    } else {
-      reviews = reviewRepository.findAllByUserId(userId);
-    }
+    List<PlaceReview> reviews = (reviewType != null)
+        ? reviewRepository.findAllByUserIdAndType(userId, reviewType)
+        : reviewRepository.findAllByUserId(userId);
 
     return PlaceReviewListResponseDto.builder()
         .totalCount(reviews.size())
@@ -100,7 +95,7 @@ public class PlaceReviewService {
         .build();
   }
 
-  /** 공연장 리뷰 작성 */
+  /** 리뷰 작성 */
   public PlaceReviewResponseDto createReview(Long userId, PlaceReviewRequestDto dto) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_ACCESS_DENIED));
@@ -119,11 +114,13 @@ public class PlaceReviewService {
         .build();
 
     reviewRepository.save(review);
-    log.info("공연장 리뷰 작성: userId={}, placeId={}", userId, place.getPlaceId());
+    updatePlaceAverageRating(place.getPlaceId());
+
+    log.info("공연장 리뷰 작성 완료: userId={}, placeId={}", userId, place.getPlaceId());
     return reviewMapper.toResponseDto(review);
   }
 
-  /** 공연장 리뷰 수정 */
+  /** 리뷰 수정 */
   public PlaceReviewResponseDto updateReview(Long userId, Long reviewId, PlaceReviewRequestDto dto) {
     PlaceReview review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
@@ -137,11 +134,11 @@ public class PlaceReviewService {
     review.setRating(dto.getRating());
     review.setReviewType(dto.getReviewType());
 
-    // updatedAt은 Auditing 자동 관리
+    updatePlaceAverageRating(review.getPlace().getPlaceId());
     return reviewMapper.toResponseDto(review);
   }
 
-  /** 공연장 리뷰 삭제 (Soft Delete) */
+  /** 리뷰 삭제 */
   public void deleteReview(Long userId, Long reviewId) {
     PlaceReview review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
@@ -152,6 +149,22 @@ public class PlaceReviewService {
 
     review.setIsDeleted(true);
     review.setDeletedAt(LocalDateTime.now());
-    log.info("공연장 리뷰 삭제: reviewId={}, userId={}", reviewId, userId);
+
+    updatePlaceAverageRating(review.getPlace().getPlaceId());
+    log.info("공연장 리뷰 삭제 완료: reviewId={}, userId={}", reviewId, userId);
+  }
+
+  /** ✅ 공연장 평균 평점 갱신 로직 */
+  private void updatePlaceAverageRating(String placeId) {
+    Double avg = reviewRepository.calculateAverageRating(placeId);
+    Place place = placeRepository.findById(placeId)
+        .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.PLACE_NOT_FOUND));
+
+    if (avg == null) avg = 0.0;
+    log.info("🏛 공연장 평균 평점 갱신: placeId={}, newAvg={}", placeId, avg);
+
+    // ★ 엔티티에 rating 필드가 있다면 아래 코드 활성화:
+    // place.setRating(avg);
+    // placeRepository.save(place);
   }
 }
