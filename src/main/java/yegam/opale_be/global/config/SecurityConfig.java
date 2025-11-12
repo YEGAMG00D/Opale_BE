@@ -63,6 +63,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/reviews/places/place/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/reviews/places/user/**").permitAll()
 
+            // 관심(좋아요) 조회(GET)은 비로그인 허용
+            .requestMatchers(HttpMethod.GET, "/api/favorites/**").permitAll()
 
             // 오픈 채팅방(public) + 메시지 조회 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/**").permitAll()
