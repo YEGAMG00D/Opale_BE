@@ -103,6 +103,10 @@ public class Performance {
   @Column(name = "time", length = 255)
   private String time;
 
+  // ✅ 새로 추가된 평점 컬럼
+  @Column(name = "rating")
+  private Double rating;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "place_id",
       foreignKey = @ForeignKey(name = "fk_performance_place"))
@@ -120,7 +124,6 @@ public class Performance {
   @Column(name = "embedding_vector", columnDefinition = "MEDIUMTEXT")
   private String embeddingVector;
 
-
   @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
   private List<PerformanceRelation> performanceRelations;
 
@@ -132,5 +135,4 @@ public class Performance {
 
   @OneToMany(mappedBy = "performance", fetch = FetchType.LAZY)
   private List<PerformanceInfoImage> performanceInfoImages;
-
 }

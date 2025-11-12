@@ -51,7 +51,7 @@ public class PerformanceMapper {
         .placeName(p.getPlaceName())
         .startDate(p.getStartDate() != null ? p.getStartDate().toLocalDate() : null)
         .endDate(p.getEndDate() != null ? p.getEndDate().toLocalDate() : null)
-        .rating(0.0)
+        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
         .keywords(splitKeywords(p.getAiKeywords()))
         .aiSummary(p.getAiSummary())
         .build();
@@ -84,7 +84,7 @@ public class PerformanceMapper {
         .placeAddress(p.getPlace() != null ? p.getPlace().getAddress() : null)
         .startDate(p.getStartDate() != null ? p.getStartDate().toLocalDate() : null)
         .endDate(p.getEndDate() != null ? p.getEndDate().toLocalDate() : null)
-        .rating(0.0)
+        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
         .keywords(splitKeywords(p.getAiKeywords()))
         .aiSummary(p.getAiSummary())
         .prfruntime(p.getPrfruntime())
