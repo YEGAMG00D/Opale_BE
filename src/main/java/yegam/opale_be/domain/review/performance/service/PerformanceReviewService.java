@@ -169,7 +169,7 @@ public class PerformanceReviewService {
     log.info("🎭 공연 평균 평점 갱신: performanceId={}, newAvg={}", performanceId, avg);
 
     // ★ 엔티티에 rating 필드가 있다면 아래 코드 활성화:
-    // performance.setRating(avg);
-    // performanceRepository.save(performance);
+     performance.setRating(avg);
+     performanceRepository.save(performance);
   }
 }

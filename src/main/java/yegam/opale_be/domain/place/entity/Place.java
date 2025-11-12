@@ -3,7 +3,6 @@ package yegam.opale_be.domain.place.entity;
 import jakarta.persistence.*;
 import java.util.List;
 import lombok.*;
-
 import java.math.BigDecimal;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 
@@ -80,11 +79,13 @@ public class Place {
   @Column(name = "parkinglot")
   private Boolean parkinglot;
 
+  // ✅ 새로 추가된 평균 평점 컬럼
+  @Column(name = "rating")
+  private Double rating;
 
   @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
   private List<Performance> performances;
 
   @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
   private List<PlaceStage> placeStages;
-
 }

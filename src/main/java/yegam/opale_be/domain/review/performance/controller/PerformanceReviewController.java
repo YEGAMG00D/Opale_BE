@@ -32,10 +32,13 @@ public class PerformanceReviewController {
   }
 
   /** 공연별 리뷰 목록 조회 (비로그인 가능) */
-  @Operation(summary = "공연별 리뷰 목록 조회", description = "공연 ID 기준으로 등록된 리뷰 목록을 조회합니다.")
+  @Operation(summary = "공연별 리뷰 목록 조회", description = "공연 ID 기준으로 등록된 리뷰 목록을 조회합니다. (reviewType 옵션)")
   @GetMapping("/performance/{performanceId}")
-  public ResponseEntity<BaseResponse<PerformanceReviewListResponseDto>> getReviewsByPerformance(@PathVariable String performanceId) {
-    PerformanceReviewListResponseDto response = reviewService.getReviewsByPerformance(performanceId);
+  public ResponseEntity<BaseResponse<PerformanceReviewListResponseDto>> getReviewsByPerformance(
+      @PathVariable String performanceId,
+      @RequestParam(required = false) ReviewType reviewType
+  ) {
+    PerformanceReviewListResponseDto response = reviewService.getReviewsByPerformance(performanceId, reviewType);
     return ResponseEntity.ok(BaseResponse.success("공연별 리뷰 목록 조회 성공", response));
   }
 

@@ -32,10 +32,13 @@ public class PlaceReviewController {
   }
 
   /** 공연장별 리뷰 목록 조회 (비로그인 가능) */
-  @Operation(summary = "공연장별 리뷰 목록 조회", description = "공연장 ID 기준으로 등록된 리뷰 목록을 조회합니다.")
+  @Operation(summary = "공연장별 리뷰 목록 조회", description = "공연장 ID 기준으로 등록된 리뷰 목록을 조회합니다. (reviewType 옵션)")
   @GetMapping("/place/{placeId}")
-  public ResponseEntity<BaseResponse<PlaceReviewListResponseDto>> getReviewsByPlace(@PathVariable String placeId) {
-    PlaceReviewListResponseDto response = reviewService.getReviewsByPlace(placeId);
+  public ResponseEntity<BaseResponse<PlaceReviewListResponseDto>> getReviewsByPlace(
+      @PathVariable String placeId,
+      @RequestParam(required = false) ReviewType reviewType
+  ) {
+    PlaceReviewListResponseDto response = reviewService.getReviewsByPlace(placeId, reviewType);
     return ResponseEntity.ok(BaseResponse.success("공연장별 리뷰 목록 조회 성공", response));
   }
 

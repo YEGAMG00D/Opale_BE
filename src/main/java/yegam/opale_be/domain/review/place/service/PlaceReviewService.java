@@ -164,7 +164,7 @@ public class PlaceReviewService {
     log.info("🏛 공연장 평균 평점 갱신: placeId={}, newAvg={}", placeId, avg);
 
     // ★ 엔티티에 rating 필드가 있다면 아래 코드 활성화:
-    // place.setRating(avg);
-    // placeRepository.save(place);
+     place.setRating(avg);
+     placeRepository.save(place);
   }
 }
