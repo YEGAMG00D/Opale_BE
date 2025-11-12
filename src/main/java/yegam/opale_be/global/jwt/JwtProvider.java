@@ -31,7 +31,7 @@ public class JwtProvider {
     this.refreshTokenExpireTime = refreshTokenExpireTime;
   }
 
-  /** ✅ 토큰 유효성 검증 */
+  /** 토큰 유효성 검증 */
   public void validateTokenOrThrow(String token) {
     try {
       Jwts.parserBuilder()
@@ -47,7 +47,7 @@ public class JwtProvider {
     }
   }
 
-  /** ✅ 사용자 ID(Long) 추출 */
+  /** 사용자 ID(Long) 추출 */
   public Long extractUserIdAsLong(String token) {
     try {
       return Long.parseLong(
@@ -63,7 +63,7 @@ public class JwtProvider {
     }
   }
 
-  /** ✅ AccessToken 생성 */
+  /** AccessToken 생성 */
   public String createAccessToken(Long userId, String email, String role) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + accessTokenExpireTime);
@@ -77,7 +77,7 @@ public class JwtProvider {
         .compact();
   }
 
-  /** ✅ RefreshToken 생성 */
+  /** RefreshToken 생성 */
   public String createRefreshToken(Long userId) {
     Date now = new Date();
     Date expiry = new Date(now.getTime() + refreshTokenExpireTime);
@@ -89,7 +89,7 @@ public class JwtProvider {
         .compact();
   }
 
-  /** ✅ 역할(Role) 추출 */
+  /** 역할(Role) 추출 */
   public String extractUserRole(String token) {
     try {
       return Jwts.parserBuilder()

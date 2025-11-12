@@ -27,11 +27,11 @@ public class VerificationCode extends BaseTimeEntity {
   @Column(nullable = false)
   private LocalDateTime expiresAt;
 
-  /** ✅ 인증 완료 여부 */
+  // 인증 완료 여부
   @Column(nullable = false)
   private Boolean verified = false;
 
-  /** ✅ 만료 여부 확인 */
+  // 만료 여부 확인
   public boolean isExpired() {
     return LocalDateTime.now().isAfter(expiresAt);
   }

@@ -36,7 +36,6 @@ public class AuthService {
 
   private final Set<String> blacklistedTokens = new HashSet<>();
 
-
   /** ✅ 로그인 */
   public LoginResponseDto login(LoginRequestDto dto) {
     User user = userRepository.findByEmail(dto.getEmail())
@@ -73,8 +72,6 @@ public class AuthService {
         .user(userResponse)
         .build();
   }
-
-
 
   /** ✅ RefreshToken 기반 AccessToken 재발급 */
   public TokenResponse refreshAccessToken(String refreshToken) {
@@ -114,8 +111,6 @@ public class AuthService {
         .refreshToken(newRefreshToken)
         .build();
   }
-
-
 
   /** ✅ 로그아웃 (AccessToken 자동 인식) */
   public void logout(Long userId) {

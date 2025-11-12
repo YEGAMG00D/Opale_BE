@@ -29,9 +29,11 @@ public class PlaceService {
   private final PlaceRepository placeRepository;
   private final PlaceMapper placeMapper;
 
-  /* ============================================================
-      ✅ 1. 공연장 목록 조회 (검색/지역 기반)
-     ============================================================ */
+  // ---------------------------------------------------------------------
+  // 공연장 목록 용
+  // ---------------------------------------------------------------------
+
+  /** 공연장 목록 조회 */
   public PlaceListResponseDto getPlaceList(PlaceListRequestDto dto) {
     String keyword = emptyToNull(dto.getKeyword());
     String area = emptyToNull(dto.getArea());
@@ -47,9 +49,7 @@ public class PlaceService {
   }
 
 
-  /* ============================================================
-      ✅ 2. 좌표 기반 근처 공연장 목록 조회 (지도 페이지용)
-     ============================================================ */
+  /** 좌표 기반 근처 공연장 목록 조회 */
   public PlaceNearbyListResponseDto getNearbyPlaces(PlaceNearbyRequestDto dto) {
     if (dto.getLatitude() == null || dto.getLongitude() == null) {
       throw new CustomException(PlaceErrorCode.INVALID_COORDINATE);
@@ -67,7 +67,7 @@ public class PlaceService {
     PlaceNearbyListResponseDto response =
         placeMapper.toNearbyListDto(result, dto.getLatitude(), dto.getLongitude(), radius, sortType);
 
-    // 🎯 정렬 처리 (이름순 / 거리순)
+    // 정렬 처리 (이름순 / 거리순)
     if ("이름순".equals(sortType)) {
       response.getPlaces().sort((a, b) -> a.getName().compareToIgnoreCase(b.getName()));
     } else {
@@ -78,18 +78,17 @@ public class PlaceService {
   }
 
 
-  /* ============================================================
-      ✅ 3. 공연장 기본 정보 조회
-     ============================================================ */
+  // ---------------------------------------------------------------------
+  // 공연장 상세 페이지 용
+  // ---------------------------------------------------------------------
+
+  /** 공연장 기본 정보 조회 */
   public PlaceBasicResponseDto getPlaceBasic(String placeId) {
     Place place = findPlace(placeId);
     return placeMapper.toPlaceBasicDto(place);
   }
 
-
-  /* ============================================================
-      ✅ 4. 공연장 내 공연관 목록 조회
-     ============================================================ */
+  /** 공연장 내 공연관 목록 조회 */
   public BasePlaceListResponseDto<PlaceStageResponseDto> getPlaceStages(String placeId) {
     Place place = findPlace(placeId);
     List<PlaceStageResponseDto> stages = place.getPlaceStages().stream()
@@ -98,19 +97,18 @@ public class PlaceService {
     return placeMapper.toBasePlaceListResponse(place, stages);
   }
 
-
-  /* ============================================================
-      ✅ 5. 공연장 편의시설 목록 조회
-     ============================================================ */
+  /** 공연장 편의시설 목록 조회 */
+  /**
+   *
+   * @param placeId
+   * @return {restaurant, cafe, store, nolibang, suyu, parkbarrier, restbarrier, runwbarrier, elevbarrier, parkinglot}
+   */
   public PlaceFacilityResponseDto getPlaceFacilities(String placeId) {
     Place place = findPlace(placeId);
     return placeMapper.toPlaceFacilityDto(place);
   }
 
-
-  /* ============================================================
-      ✅ 6. 공연장별 공연 목록 조회
-     ============================================================ */
+  /** 공연장별 공연 목록 조회 */
   public BasePlaceListResponseDto<PlacePerformanceResponseDto> getPlacePerformances(String placeId) {
     Place place = findPlace(placeId);
     List<PlacePerformanceResponseDto> performances = place.getPerformances().stream()
@@ -119,16 +117,16 @@ public class PlaceService {
     return placeMapper.toBasePlaceListResponse(place, performances);
   }
 
-
-  /* ============================================================
-      ✅ Private 유틸 메서드
-     ============================================================ */
+  /** place_id로 공연장 객체 찾아서 리턴 */
   private Place findPlace(String id) {
     return placeRepository.findById(id)
         .orElseThrow(() -> new CustomException(PlaceErrorCode.PLACE_NOT_FOUND));
   }
 
+  /** 내용이 null이거나 블랭크라면 null로 리턴, 아니면 내용 리턴 */
   private String emptyToNull(String s) {
     return (s == null || s.isBlank()) ? null : s;
   }
+
+
 }

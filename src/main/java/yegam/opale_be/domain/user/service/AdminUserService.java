@@ -23,6 +23,11 @@ public class AdminUserService {
   private final UserRepository userRepository;
   private final UserMapper userMapper;
 
+
+  // ---------------------------------------------------------------------
+  // 운영자 페이지 용
+  // ---------------------------------------------------------------------
+  
   /** 전체 회원 목록 조회 (운영자 포함 여부에 따라 필터링) */
   public AdminUserListResponseDto getAllUsers(boolean includeAdmin) {
     List<User> users = includeAdmin
@@ -49,4 +54,7 @@ public class AdminUserService {
 
     return userMapper.toAdminUserResponseDto(user);
   }
+
+
+
 }
