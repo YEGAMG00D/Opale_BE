@@ -1,7 +1,7 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jdk
 
-ARG JAR_FILE=jar/*.jar
+WORKDIR /app
 
-COPY ${JAR_FILE} app.jar
+COPY jar/app.jar app.jar
 
-ENTRYPOINT ["java", "-jar", "/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
