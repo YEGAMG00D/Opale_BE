@@ -9,44 +9,38 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 레포 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1) Docker 이미지 빌드
-      - name: Build Docker Image
-        run: |
-          docker build -t opale-be .
-
-      # 2) tar 파일 생성 (workspace에서 직접 생성)
-      - name: Save Docker Image as tar
-        run: |
-          mkdir -p build
-          docker save opale-be -o build/opale-be.tar
-
-      # 3) EC2로 tar 파일 업로드
-      - name: Upload Docker image to EC2
+      # 2️⃣ EC2로 프로젝트 전체 업로드
+      - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/opale-be.tar"
-          target: "/home/ec2-user/"
+          source: "./"
+          target: "/home/ec2-user/opale_be"
+          overwrite: true   # 기존 폴더 덮어쓰기
+          rm: true          # EC2쪽에 남은 예전 파일 정리
 
-      # 4) EC2에서 로드 + 실행
+      # 3️⃣ EC2 접속해서 Docker 빌드 + 컨테이너 재실행
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 1500s   # 🔥 여기만 넉넉하게 늘림 (25분까지 허용)
           script: |
             set -e
+            cd /home/ec2-user/opale_be
 
-            echo "📦 Docker 이미지 로드"
-            docker load -i /home/ec2-user/build/opale-be.tar
+            echo "🔨 Docker 이미지 빌드 중..."
+            docker build -t opale-be .
 
-            echo "🧹 기존 컨테이너 종료/삭제"
+            echo "🧹 기존 백엔드 컨테이너 종료 및 삭제..."
             docker rm -f opale-be || true
 
             echo "🚀 새 컨테이너 실행"
