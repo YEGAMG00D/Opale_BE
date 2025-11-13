@@ -10,11 +10,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+      ...
 
-      # 💥 프로젝트 루트 설정 (레포 이름 그대로!)
       - name: Build JAR
-        working-directory: ./Opale_BE
+        working-directory: ./opale_Be   # ⬅ 경로 대소문자 정확하게!
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
@@ -26,7 +25,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "Opale_BE/build/libs/app.jar"
+          source: "opale_Be/build/libs/app.jar"   # ⬅ 이 부분도 대소문자 정확하게
           target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
