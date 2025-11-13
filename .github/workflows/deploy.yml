@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 with Docker
+name: Deploy Spring Boot to EC2 (JAR only)
 
 on:
   push:
@@ -9,45 +9,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Docker Image
+      # 2) Gradle 빌드
+      - name: Build JAR
         run: |
-          docker build -t opale-be:latest .
+          chmod +x gradlew
+          ./gradlew clean build -x test
 
-      - name: Save Docker image as tar
-        run: |
-          docker save opale-be:latest -o opale-be.tar
-
-      - name: Upload tar to EC2
+      # 3) JAR 파일만 EC2로 업로드
+      - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "opale-be.tar"
-          target: "/home/ec2-user/opale_be/opale-be.tar"
+          source: "build/libs/*.jar"
+          target: "/home/ec2-user/opale_be/jar/app.jar"
+          overwrite: true
 
+      # 4) EC2에서 Docker 배포
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 600s
           script: |
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "🧹 기존 컨테이너 종료"
+            echo "🛑 기존 컨테이너 삭제"
             docker rm -f opale-be || true
 
-            echo "🧹 기존 이미지 삭제"
-            docker rmi opale-be:latest || true
-
-            echo "📦 tar → Docker 이미지 로드"
-            docker load -i opale-be.tar
+            echo "🐳 도커 이미지 다시 빌드"
+            docker build -t opale-be .
 
             echo "🚀 새 컨테이너 실행"
             docker run -d \
@@ -55,6 +53,6 @@ jobs:
               --network opale-net \
               -p 8080:8080 \
               -v /home/ec2-user/resources/application.yml:/config/application.yml \
-              opale-be:latest
+              opale-be
 
-            echo "🎉 Deployment completed!"
+            echo "🎉 배포 완료!"
