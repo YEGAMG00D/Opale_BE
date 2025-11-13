@@ -53,8 +53,8 @@ jobs:
           echo "📌 JAR 파일 이름 자동 감지"
           ls build/libs/*.jar || echo "❌ JAR 파일 없음"
 
-          echo "📌 app.jar 생성 시도"
-          cp build/libs/*.jar build/libs/app.jar || echo "❌ app.jar 복사 실패"
+          echo "📌 app.jar 생성 시도 (plain 제외하고 메인 JAR만 선택)"
+          cp build/libs/*SNAPSHOT.jar build/libs/app.jar || echo "❌ app.jar 복사 실패"
 
           echo "===================="
           echo "📁 app.jar 최종 존재 여부"
