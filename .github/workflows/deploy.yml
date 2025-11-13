@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 (JAR only)
+name: Deploy Spring Boot to EC2 (DEBUG MODE)
 
 on:
   push:
@@ -9,15 +9,70 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------------
+      # 1) 깃허브 체크아웃
+      # -------------------------------
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # -------------------------------
+      # 2) 현재 작업 디렉토리 디버깅
+      # -------------------------------
+      - name: Debug — root directory
+        run: |
+          echo "📌 현재 위치(pwd):"
+          pwd
+          echo "📌 현재 디렉토리 목록:"
+          ls -al
+
+      # -------------------------------
+      # 3) Gradle 빌드
+      # -------------------------------
       - name: Build JAR
         run: |
+          echo "===================="
+          echo "📌 GRADLE BUILD START"
+          echo "===================="
+          
+          echo "📁 현재 위치 확인:"
+          pwd
+          ls -al
+          
+          echo "📁 gradlew 권한 부여"
           chmod +x gradlew
-          ./gradlew clean build -x test
-          cp build/libs/*.jar build/libs/app.jar
 
+          echo "📌 gradlew build 실행 중..."
+          ./gradlew clean build -x test
+
+          echo "===================="
+          echo "📁 build/libs 디렉토리 목록"
+          echo "===================="
+          ls -al build/
+          ls -al build/libs || echo "❌ build/libs 없음!"
+
+          echo "📌 JAR 파일 이름 자동 감지"
+          ls build/libs/*.jar || echo "❌ JAR 파일 없음"
+
+          echo "📌 app.jar 생성 시도"
+          cp build/libs/*.jar build/libs/app.jar || echo "❌ app.jar 복사 실패"
+
+          echo "===================="
+          echo "📁 app.jar 최종 존재 여부"
+          echo "===================="
+          ls -al build/libs
+
+      # -------------------------------
+      # 4) jar 파일 업로드 전 디버깅
+      # -------------------------------
+      - name: Debug — jar upload source
+        run: |
+          echo "📁 Actions 내부 JAR 경로 확인"
+          pwd
+          ls -al build/libs
+
+      # -------------------------------
+      # 5) EC2로 JAR 전송 (SCP)
+      # -------------------------------
       - name: Upload ONLY app.jar to EC2 using SCP
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -28,6 +83,9 @@ jobs:
           target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
+      # -------------------------------
+      # 6) 서버 디버깅 — EC2 SSH 명령 실행
+      # -------------------------------
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -35,20 +93,44 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            set -e
+            echo "===================="
+            echo "📌 EC2 접속 성공"
+            echo "===================="
 
-            ls -al /home/ec2-user/opale_be/jar/
+            echo "📁 JAR 업로드 경로 확인:"
+            ls -al /home/ec2-user/opale_be/jar/ || echo "❌ 업로드 경로 없음"
 
-            docker network create opale-net || true
-            docker rm -f opale-be || true
+            echo "📁 프로젝트 디렉토리 목록:"
+            ls -al /home/ec2-user/opale_be/
 
+            echo "📌 Docker 네트워크 생성"
+            docker network create opale-net || echo "이미 있음"
+
+            echo "📌 기존 컨테이너 제거"
+            docker rm -f opale-be || echo "삭제할 컨테이너 없음"
+
+            echo "📌 Dockerfile 빌드 시작"
             cd /home/ec2-user/opale_be
-            docker build -t opale-be .
+            ls -al
+            docker build -t opale-be . || echo "❌ 도커 빌드 실패"
 
+            echo "📌 Docker run 시작"
             docker run -d \
               --name opale-be \
               --network opale-net \
               -p 8080:8080 \
               -v /home/ec2-user/resources/application.yml:/app/application.yml \
               -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
-              opale-be
+              opale-be || echo "❌ 도커 실행 실패"
+
+            echo "📌 현재 실행 중인 컨테이너 목록"
+            docker ps -a
+
+            echo "📌 로그:"
+            docker logs opale-be || echo "❌ 컨테이너 로그 읽기 실패"
+
+      # -------------------------------
+      # 7) 완료 메시지
+      # -------------------------------
+      - name: Finished
+        run: echo "🚀 모든 작업 완료 (DEBUG MODE)"
