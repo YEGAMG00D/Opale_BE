@@ -13,24 +13,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2) Gradle 빌드
+      # 2) Gradle build
       - name: Build JAR
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
 
-      # 3) JAR만 EC2로 업로드 (Rsync)
+      # 3) Upload JAR to EC2 (rsync alternative)
       - name: Upload JAR to EC2
-        uses: appleboy/rsync-action@v0.1.6
+        uses: burnett01/rsync-deployments@v1.1
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
-          key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar"
-          target: "/home/ec2-user/opale_be/jar"
-          rm: true
+          switches: -avzr --delete
+          path: build/libs/
+          remote_path: /home/ec2-user/opale_be/jar/
+          remote_host: ${{ secrets.EC2_HOST }}
+          remote_port: 22
+          remote_user: ec2-user
+          remote_key: ${{ secrets.EC2_SSH_KEY }}
 
-      # 4) EC2에서 Docker 빌드 & 실행
+      # 4) Deploy on EC2
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -39,11 +40,10 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            
+
             echo "📁 JAR 위치 확인"
             ls -al /home/ec2-user/opale_be/jar
 
-            # 도커 네트워크
             docker network create opale-net || true
 
             echo "🧹 기존 컨테이너 종료"
