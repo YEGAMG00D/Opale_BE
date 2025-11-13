@@ -12,9 +12,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 💥 프로젝트 루트 설정!
+      # 💥 프로젝트 루트 설정 (레포 이름 그대로!)
       - name: Build JAR
-        working-directory: ./opale_Be
+        working-directory: ./Opale_BE
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
@@ -26,7 +26,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "opale_Be/build/libs/app.jar"
+          source: "Opale_BE/build/libs/app.jar"
           target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
@@ -39,14 +39,17 @@ jobs:
           script: |
             set -e
 
+            echo "📁 JAR 위치 확인"
             ls -al /home/ec2-user/opale_be/jar/
 
             docker network create opale-net || true
             docker rm -f opale-be || true
 
+            echo "🔨 도커 이미지 빌드"
             cd /home/ec2-user/opale_be
             docker build -t opale-be .
 
+            echo "🚀 컨테이너 실행"
             docker run -d \
               --name opale-be \
               --network opale-net \
