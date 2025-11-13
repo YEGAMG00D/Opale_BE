@@ -23,9 +23,12 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+
+          # 🔥 JAR 1개만 파일로 강제 업로드
           source: "build/libs/opale_Be-0.0.1-SNAPSHOT.jar"
-          target: "/home/ec2-user/opale_be/jar/"
+          target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
+          strip_components: 0   # ← 이거 추가! (폴더로 올라가는 문제 100% 방지)
 
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
@@ -37,18 +40,13 @@ jobs:
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "🛑 기존 컨테이너 삭제"
             docker rm -f opale-be || true
 
-            echo "🐳 새 이미지 빌드"
             docker build -t opale-be .
 
-            echo "🚀 새 컨테이너 실행"
             docker run -d \
               --name opale-be \
               --network opale-net \
               -p 8080:8080 \
               -v /home/ec2-user/resources/application.yml:/config/application.yml \
               opale-be
-
-            echo "🎉 배포 완료!"
