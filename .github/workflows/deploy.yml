@@ -9,26 +9,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1) Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2) Gradle 빌드
       - name: Build JAR
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
 
-      # 🔥 공식 rsync-action (폴더 깨짐 문제 0%)
+      # 3) JAR만 EC2로 업로드 (Rsync)
       - name: Upload JAR to EC2
-        uses: burnett01/rsync-deploy@v1.2
+        uses: appleboy/rsync-action@v0.1.6
         with:
-          switches: -avz
-          path: build/libs/opale_Be-0.0.1-SNAPSHOT.jar
-          remote_path: /home/ec2-user/opale_be/jar/app.jar
-          remote_host: ${{ secrets.EC2_HOST }}
-          remote_user: ec2-user
-          remote_key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "build/libs/*.jar"
+          target: "/home/ec2-user/opale_be/jar"
+          rm: true
 
-      - name: SSH into EC2 and deploy
+      # 4) EC2에서 Docker 빌드 & 실행
+      - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -36,12 +39,18 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             set -e
-            cd /home/ec2-user/opale_be
+            
+            echo "📁 JAR 위치 확인"
+            ls -al /home/ec2-user/opale_be/jar
 
-            echo "🛑 기존 컨테이너 삭제"
+            # 도커 네트워크
+            docker network create opale-net || true
+
+            echo "🧹 기존 컨테이너 종료"
             docker rm -f opale-be || true
 
-            echo "🐳 새 이미지 빌드"
+            echo "🔨 새 Docker 이미지 빌드"
+            cd /home/ec2-user/opale_be
             docker build -t opale-be .
 
             echo "🚀 새 컨테이너 실행"
@@ -49,7 +58,8 @@ jobs:
               --name opale-be \
               --network opale-net \
               -p 8080:8080 \
-              -v /home/ec2-user/resources/application.yml:/config/application.yml \
+              -v /home/ec2-user/resources/application.yml:/app/application.yml \
+              -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
               opale-be
 
-            echo "🎉 배포 완료!"
+            echo "🎉 Deployment completed!"

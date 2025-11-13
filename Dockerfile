@@ -1,11 +1,7 @@
-FROM eclipse-temurin:21-jre
-WORKDIR /app
+FROM openjdk:17-jdk-slim
 
-# JAR 두기 (Actions에서 COPY 필요 없음 → EC2에서 docker build 시 ADD로 jar 복사됨)
-ADD jar/app.jar /app/app.jar
+ARG JAR_FILE=jar/*.jar
 
-# 외부 application.yml을 /config/application.yml로 마운트
-ENV SPRING_CONFIG_LOCATION=optional:file:/config/application.yml
+COPY ${JAR_FILE} app.jar
 
-EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app.jar"]

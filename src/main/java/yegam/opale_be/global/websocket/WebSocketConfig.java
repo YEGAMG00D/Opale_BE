@@ -33,8 +33,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
             "https://api.withopale.com",
             "https://musical-scone-5a328b.netlify.app",
             "https://dev--musical-scone-5a328b.netlify.app"
-        )
-        .withSockJS(); // SockJS fallback
+        );
+        //.withSockJS(); // SockJS fallback
   }
 
   @Override
