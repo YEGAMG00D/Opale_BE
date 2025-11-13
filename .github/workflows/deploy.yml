@@ -19,19 +19,18 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build -x test
 
-      # 3) Upload JAR to EC2 (rsync alternative)
+      # 3) Upload JAR to EC2 via SCP
       - name: Upload JAR to EC2
-        uses: burnett01/rsync-deployments@v1.1
+        uses: appleboy/scp-action@v0.1.7
         with:
-          switches: -avzr --delete
-          path: build/libs/
-          remote_path: /home/ec2-user/opale_be/jar/
-          remote_host: ${{ secrets.EC2_HOST }}
-          remote_port: 22
-          remote_user: ec2-user
-          remote_key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "build/libs/*.jar"
+          target: "/home/ec2-user/opale_be/jar/"
+          overwrite: true
 
-      # 4) Deploy on EC2
+      # 4) SSH into EC2 and deploy
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -42,14 +41,14 @@ jobs:
             set -e
 
             echo "📁 JAR 위치 확인"
-            ls -al /home/ec2-user/opale_be/jar
+            ls -al /home/ec2-user/opale_be/jar/
 
             docker network create opale-net || true
 
-            echo "🧹 기존 컨테이너 종료"
+            echo "🧹 기존 컨테이너 중지/삭제"
             docker rm -f opale-be || true
 
-            echo "🔨 새 Docker 이미지 빌드"
+            echo "🔨 도커 이미지 빌드"
             cd /home/ec2-user/opale_be
             docker build -t opale-be .
 
