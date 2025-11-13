@@ -8,7 +8,6 @@ import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.*;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 
-
 @Configuration
 @EnableWebSocketMessageBroker
 @RequiredArgsConstructor
@@ -18,32 +17,33 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
   @Override
   public void configureMessageBroker(MessageBrokerRegistry registry) {
-    // 구독 prefix
-    registry.enableSimpleBroker("/topic");
-    // 송신 prefix
-    registry.setApplicationDestinationPrefixes("/app");
+    registry.enableSimpleBroker("/topic"); // 구독 prefix
+    registry.setApplicationDestinationPrefixes("/app"); // 송신 prefix
   }
 
   @Override
   public void registerStompEndpoints(StompEndpointRegistry registry) {
     registry.addEndpoint("/ws")
-        .setAllowedOriginPatterns("*") // 프론트 도메인 허용
+        // 로컬 환경 프론트에서도 작업할 수 있게.
+        .setAllowedOrigins(
+            "http://localhost:5173",
+            "http://localhost:5174",
+            "http://localhost:3000",
+            "https://withopale.com",
+            "https://api.withopale.com",
+            "https://musical-scone-5a328b.netlify.app",
+            "https://dev--musical-scone-5a328b.netlify.app"
+        )
         .withSockJS(); // SockJS fallback
   }
 
   @Override
   public void configureClientInboundChannel(ChannelRegistration registration) {
-    // 메시지 수신 전 JWT 인증 인터셉터
-    registration.interceptors(stompHandler);
+    registration.interceptors(stompHandler); // JWT 인증 인터셉터
   }
-
 
   @Override
   public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
     resolvers.add(new WebSocketUserArgumentResolver());
   }
-
-
-
-
 }
