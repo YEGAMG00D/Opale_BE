@@ -13,19 +13,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ EC2로 프로젝트 업로드
-      - name: Upload project to EC2
+      # 2️⃣ GitHub Actions에서 Docker 이미지 빌드
+      - name: Build Docker Image
+        run: |
+          docker build -t opale-be .
+
+      # 3️⃣ Docker 이미지를 tar 파일로 저장
+      - name: Save Docker Image as tar
+        run: |
+          docker save opale-be -o opale-be.tar
+
+      # 4️⃣ tar 파일을 EC2로 업로드
+      - name: Upload Docker image to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "./"
-          target: "/home/ec2-user/opale_be"
+          source: "opale-be.tar"
+          target: "/home/ec2-user/"
           overwrite: true
-          rm: true
 
-      # 3️⃣ EC2 접속 → Docker 이미지 빌드 및 재배포
+      # 5️⃣ EC2 접속 → 컨테이너 재배포 (빌드 없음!)
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -35,13 +44,12 @@ jobs:
           timeout: 600s
           script: |
             set -e
-            cd /home/ec2-user/opale_be
 
-            echo "🔨 Docker 이미지 빌드 중..."
-            docker build -t opale-be .
-
-            echo "🧹 기존 백엔드 컨테이너 종료 및 삭제..."
+            echo "🧹 기존 컨테이너 종료 및 삭제"
             docker rm -f opale-be || true
+
+            echo "📦 Docker 이미지 로드"
+            docker load -i /home/ec2-user/opale-be.tar
 
             echo "🚀 새 컨테이너 실행"
             docker run -d \
