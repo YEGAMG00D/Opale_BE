@@ -9,55 +9,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
-      # 1️⃣ 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ 불필요한 대용량 폴더 제거 (빌드 폴더, .gradle, .idea)
-      - name: Remove unneeded folders before upload
+      - name: Build Docker Image
         run: |
-          rm -rf .gradle
-          rm -rf build
-          rm -rf .idea
+          docker build -t opale-be:latest .
 
-      # 3️⃣ EC2로 업로드 (필요한 소스만)
-      - name: Upload project to EC2
+      - name: Save Docker image as tar
+        run: |
+          docker save opale-be:latest -o opale-be.tar
+
+      - name: Upload tar to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "./"
-          target: "/home/ec2-user/opale_be"
-          overwrite: true
-          rm: true
+          source: "opale-be.tar"
+          target: "/home/ec2-user/opale_be/opale-be.tar"
 
-      # 4️⃣ EC2 접속해서 Docker 이미지 빌드 + 재실행
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          timeout: 600s     # 10분 (이제 이걸로도 충분함)
+          timeout: 600s
           script: |
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "🔨 Docker 이미지 빌드 중..."
-            docker build -t opale-be .
-
-            echo "🧹 기존 컨테이너 종료 및 삭제..."
+            echo "🧹 기존 컨테이너 종료"
             docker rm -f opale-be || true
+
+            echo "🧹 기존 이미지 삭제"
+            docker rmi opale-be:latest || true
+
+            echo "📦 tar → Docker 이미지 로드"
+            docker load -i opale-be.tar
 
             echo "🚀 새 컨테이너 실행"
             docker run -d \
               --name opale-be \
               --network opale-net \
               -p 8080:8080 \
-              -v /home/ec2-user/resources/application.yml:/app/application.yml \
-              -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
-              opale-be
+              -v /home/ec2-user/resources/application.yml:/config/application.yml \
+              opale-be:latest
 
-            echo "🎉 Deployment completed successfully!"
+            echo "🎉 Deployment completed!"
