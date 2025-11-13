@@ -19,18 +19,18 @@ jobs:
           chmod +x gradlew
           ./gradlew clean build -x test
 
-      # 3) JAR 파일만 EC2로 업로드
+      # 3) JAR 파일 업로드(정확한 파일 이름으로 지정)
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar"
+          source: "build/libs/opale_Be-0.0.1-SNAPSHOT.jar"
           target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
-      # 4) EC2에서 Docker 배포
+      # 4) EC2에서 도커 재배포
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -44,7 +44,7 @@ jobs:
             echo "🛑 기존 컨테이너 삭제"
             docker rm -f opale-be || true
 
-            echo "🐳 도커 이미지 다시 빌드"
+            echo "🐳 새 이미지 빌드"
             docker build -t opale-be .
 
             echo "🚀 새 컨테이너 실행"
