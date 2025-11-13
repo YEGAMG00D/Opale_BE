@@ -2,7 +2,7 @@ name: Deploy Spring Boot to EC2 with Docker
 
 on:
   push:
-    branches: [ main ]  # main에 머지/푸시될 때만 배포
+    branches: [ main ]
 
 jobs:
   deploy:
@@ -25,28 +25,25 @@ jobs:
           overwrite: true
           rm: true
 
-      # 3️⃣ EC2 접속 → Docker 빌드 및 재배포
+      # 3️⃣ EC2 접속 → Docker 이미지 빌드 및 재배포
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          timeout: 600s
           script: |
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "🛠 Docker 네트워크 연결 확인..."
-            docker network create opale-net || true
-            docker network connect opale-net mysql-opale || true
-
-            echo "🔨 새 이미지 빌드 중..."
+            echo "🔨 Docker 이미지 빌드 중..."
             docker build -t opale-be .
 
-            echo "🧹 기존 컨테이너 종료 및 삭제..."
+            echo "🧹 기존 백엔드 컨테이너 종료 및 삭제..."
             docker rm -f opale-be || true
 
-            echo "🚀 새 컨테이너 실행 (application.yml 자동 마운트)"
+            echo "🚀 새 컨테이너 실행"
             docker run -d \
               --name opale-be \
               --network opale-net \
