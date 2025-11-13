@@ -9,28 +9,26 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2) Gradle build
       - name: Build JAR
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
+          # 빌드된 jar 파일명을 app.jar 로 통일
+          cp build/libs/*.jar build/libs/app.jar
 
-      # 3) Upload JAR to EC2 via SCP
-      - name: Upload JAR to EC2
+      - name: Upload ONLY app.jar to EC2 using SCP
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar"
-          target: "/home/ec2-user/opale_be/jar/"
+          source: "build/libs/app.jar"
+          target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
-      # 4) SSH into EC2 and deploy
       - name: Deploy on EC2
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -40,12 +38,10 @@ jobs:
           script: |
             set -e
 
-            echo "📁 JAR 위치 확인"
+            echo "📁 JAR 위치 확인 (jar/app.jar인지 확인)"
             ls -al /home/ec2-user/opale_be/jar/
 
             docker network create opale-net || true
-
-            echo "🧹 기존 컨테이너 중지/삭제"
             docker rm -f opale-be || true
 
             echo "🔨 도커 이미지 빌드"
