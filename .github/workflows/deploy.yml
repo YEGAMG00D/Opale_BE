@@ -2,7 +2,7 @@ name: Deploy Spring Boot to EC2 (JAR only)
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
 
 jobs:
   deploy:
@@ -10,10 +10,10 @@ jobs:
 
     steps:
       - name: Checkout code
-      ...
+        uses: actions/checkout@v4
 
       - name: Build JAR
-        working-directory: ./opale_Be   # ⬅ 경로 대소문자 정확하게!
+        working-directory: ./opale_Be
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
@@ -25,7 +25,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "opale_Be/build/libs/app.jar"   # ⬅ 이 부분도 대소문자 정확하게
+          source: "opale_Be/build/libs/app.jar"
           target: "/home/ec2-user/opale_be/jar/app.jar"
           overwrite: true
 
