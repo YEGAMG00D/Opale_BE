@@ -8,16 +8,14 @@ import org.springframework.stereotype.Repository;
 import yegam.opale_be.domain.analytics.entity.UserEventLog;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Repository
 public interface UserEventLogRepository extends JpaRepository<UserEventLog, Long> {
 
-  /**
-   * 사용자 행동 로그 검색 (필터 조건 모두 Optional)
-   *
-   * - userId, eventType, targetType, targetId, 날짜 범위
-   * - createdAt DESC 정렬은 Service에서 Pageable에 설정
-   */
+  /* ---------------------------------------------------------
+     1) 기존 검색 기능 (그대로 유지)
+     --------------------------------------------------------- */
   @Query("""
       SELECT l
       FROM UserEventLog l
@@ -36,5 +34,24 @@ public interface UserEventLogRepository extends JpaRepository<UserEventLog, Long
       @Param("startAt") LocalDateTime startAt,
       @Param("endAt") LocalDateTime endAt,
       Pageable pageable
+  );
+
+  /* ---------------------------------------------------------
+     2) 🔥 벡터 계산에 필요한 로그 조회 기능 추가
+     --------------------------------------------------------- */
+
+  /** 특정 유저의 전체 로그 조회 */
+  List<UserEventLog> findByUser_UserId(Long userId);
+
+  /** 특정 유저의 최근 N일 간 로그 조회 */
+  @Query("""
+      SELECT l
+      FROM UserEventLog l
+      WHERE l.user.userId = :userId
+        AND l.createdAt >= :from
+      """)
+  List<UserEventLog> findRecentLogs(
+      @Param("userId") Long userId,
+      @Param("from") LocalDateTime from
   );
 }
