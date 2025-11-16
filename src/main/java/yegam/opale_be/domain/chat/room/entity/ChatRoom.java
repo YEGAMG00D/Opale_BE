@@ -47,7 +47,7 @@ public class ChatRoom extends BaseTimeEntity {
 
   /** 채팅방 조회수 */
   @Column(name = "visit_count", nullable = false)
-  private int visitCount = 0;
+  private Long visitCount = 0L;
 
   @Column(name = "last_message", length = 255)
   private String lastMessage;

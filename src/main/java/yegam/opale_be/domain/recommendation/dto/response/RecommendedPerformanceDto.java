@@ -16,10 +16,10 @@ public class RecommendedPerformanceDto {
   @Schema(description = "공연 ID", example = "PF273937")
   private String performanceId;
 
-  @Schema(description = "공연명", example = "헤어 – 제주특별자치도")
+  @Schema(description = "공연명")
   private String title;
 
-  @Schema(description = "장르명", example = "뮤지컬")
+  @Schema(description = "장르명")
   private String genre;
 
   @Schema(description = "포스터 이미지 URL")
@@ -34,6 +34,9 @@ public class RecommendedPerformanceDto {
   @Schema(description = "평점")
   private Double rating;
 
-  @Schema(description = "추천 score(Pinecone 유사도)")
+  @Schema(description = "Pinecone 유사도 점수")
   private Double score;
+
+  @Schema(description = "조회수", example = "137")
+  private Long viewCount;
 }

@@ -28,6 +28,13 @@ public interface PlaceRepository extends JpaRepository<Place, String> {
       """)
   Page<Place> search(@Param("keyword") String keyword, @Param("area") String area, Pageable pageable);
 
+  /** ⭐ 인기 공연장 (조회수 + 평점 + 공연장 이름) */
+  @Query("""
+      SELECT p FROM Place p
+      ORDER BY p.viewCount DESC, p.rating DESC NULLS LAST, p.name ASC
+      """)
+  List<Place> findPopularPlaces(Pageable pageable);
+
   /** 임시용 근처 공연장 (테스트용) */
   List<Place> findTop10ByOrderByNameAsc();
 
