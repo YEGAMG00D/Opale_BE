@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 with Docker (Full Debug)
+name: Deploy Spring Boot to EC2 with Docker (Fixed)
 
 on:
   push:
@@ -12,28 +12,44 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1️⃣ JAR 빌드
-      - name: Build JAR
+      # 1️⃣ JAR 빌드 및 파일명 저장 (수정된 부분: ID와 Output을 사용하여 파일명 획득)
+      - name: Build JAR and set filename
+        id: build_jar
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
+          
           echo "📦 Build 결과:"
           ls -al build/libs
+          
+          # 실행 가능한 JAR 파일명 (plain.jar 제외)을 찾습니다.
+          # find의 출력은 "./build/libs/opale_Be-0.0.1-SNAPSHOT.jar" 형태입니다.
+          JAR_PATH=$(find ./build/libs -maxdepth 1 -name "*.jar" ! -name "*-plain.jar" | head -n 1)
+          
+          if [ -z "$JAR_PATH" ]; then
+            echo "::error::Executable JAR file not found in build/libs."
+            exit 1
+          fi
+          
+          # 다음 단계에서 사용할 수 있도록 JAR 파일 경로를 output 변수에 저장
+          echo "jar_file_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "✅ JAR 파일 경로: $JAR_PATH 를 output으로 저장했습니다."
 
-      # 2️⃣ JAR + Dockerfile 업로드
+      # 2️⃣ JAR + Dockerfile 업로드 (수정된 부분: 정확한 파일 경로 변수 사용)
       - name: Upload JAR & Dockerfile to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
+          # 1단계에서 저장한 정확한 파일 경로와 Dockerfile을 source로 지정
           source: |
-            ./build/libs/*.jar
+            ${{ steps.build_jar.outputs.jar_file_path }}
             ./Dockerfile
           target: "/home/ec2-user/opale_be"
           overwrite: true
 
-      # 3️⃣ EC2에서 Docker 재배포
+      # 3️⃣ EC2에서 Docker 재배포 (SSH 스크립트는 기존 코드를 유지하되, JAR 파일 찾기 로직이 정상 작동할 것입니다.)
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -49,16 +65,18 @@ jobs:
 
             # ===========================
             # 1. JAR 자동 감지 및 적용
+            # scp-action으로 전송된 JAR 파일은 opale_be 디렉토리에 직접 복사됩니다.
             # ===========================
             echo "🔍 JAR 파일 자동 검색 중..."
             JAR_FILE=$(ls *.jar 2>/dev/null | head -n 1 || true)
 
             if [ -z "$JAR_FILE" ]; then
-              echo "❌ JAR 파일을 찾을 수 없습니다. build/libs 업로드 여부를 확인하세요."
+              echo "❌ JAR 파일을 찾을 수 없습니다. (업로드 실패 가능성)"
               exit 1
             fi
 
             echo "📦 JAR 파일 발견: $JAR_FILE"
+            # Dockerfile에서 app.jar을 사용하고 있다고 가정하고 이름 변경
             mv "$JAR_FILE" app.jar
 
             # ===========================
@@ -72,16 +90,18 @@ jobs:
             echo "✅ application.yml 확인됨"
 
             # ===========================
-            # 3. Docker 네트워크 확인
+            # 3. Docker 네트워크 확인 (mysql-opale 컨테이너와 연결)
             # ===========================
             echo "🛠 Docker 네트워크 연결 확인"
-            docker network create opale-net || true
+            # 이미 있으면 무시 (|| true)
+            docker network create opale-net || true 
             docker network connect opale-net mysql-opale || true
 
             # ===========================
             # 4. 이미지 빌드
             # ===========================
             echo "🔨 Docker 이미지 빌드 중..."
+            # app.jar을 사용해 이미지 빌드
             docker build -t opale-be .
 
             # ===========================
@@ -102,7 +122,7 @@ jobs:
               -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
               opale-be
 
-            echo "🎉 Docker 배포 완료!"
+            echo "🎉 Docker 배포 시작 완료!"
 
             # ===========================
             # 7. 컨테이너 상태 및 로그 출력
