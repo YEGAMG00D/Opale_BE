@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  mysql-opale:
+    image: mysql:8
+    container_name: mysql-opale
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    networks:
+      - opale-net
+    volumes:
+      - /home/ec2-user/mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  opale-be:
+    image: opale-be
+    container_name: opale-be
+    restart: always
+    depends_on:
+      - mysql-opale
+    networks:
+      - opale-net
+    ports:
+      - "8080:8080"
+    volumes:
+      - /home/ec2-user/resources/application.yml:/app/application.yml
+    environment:
+      SPRING_CONFIG_LOCATION: "file:/app/application.yml"
+
+networks:
+  opale-net:
+    driver: bridge
