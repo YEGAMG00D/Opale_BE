@@ -40,7 +40,74 @@ jobs:
             docker network create opale-net || true
             docker network connect opale-net mysql-opale || true
 
+            echo "🔨 새 이미지 빌드 중..."name: Deploy Spring Boot to EC2 with Docker
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1️⃣ 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2️⃣ JAR 빌드
+      - name: Build JAR
+        run: |
+          chmod +x gradlew
+          ./gradlew clean build -x test
+
+      # 3️⃣ EC2로 JAR + Dockerfile만 업로드
+      - name: Upload JAR & Dockerfile to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "build/libs/*.jar,Dockerfile"
+          target: "/home/ec2-user/opale_be"
+          overwrite: true
+          rm: false
+
+      # 4️⃣ EC2에서 Docker 이미지 생성 + 실행
+      - name: SSH into EC2 and deploy
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+            cd /home/ec2-user/opale_be
+
+            echo "📦 최신 JAR 적용"
+            mv build/libs/*.jar app.jar || cp *.jar app.jar
+
+            echo "🛠 Docker 네트워크 연결 확인..."
+            docker network create opale-net || true
+            docker network connect opale-net mysql-opale || true
+
             echo "🔨 새 이미지 빌드 중..."
+            docker build -t opale-be .
+
+            echo "🧹 기존 컨테이너 종료 및 삭제..."
+            docker rm -f opale-be || true
+
+            echo "🚀 새 컨테이너 실행"
+            docker run -d \
+              --name opale-be \
+              --network opale-net \
+              -p 8080:8080 \
+              -v /home/ec2-user/resources/application.yml:/app/application.yml \
+              -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
+              opale-be
+
+            echo "🎉 Deployment completed successfully!"
+
             docker build -t opale-be .
 
             echo "🧹 기존 컨테이너 종료 및 삭제..."

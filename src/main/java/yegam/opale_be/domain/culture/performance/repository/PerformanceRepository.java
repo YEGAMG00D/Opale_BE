@@ -97,4 +97,46 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
       @Param("keyword") String keyword,
       @Param("date") LocalDate date
   );
+
+
+
+  /** 추천: ID 목록으로 공연 조회 */
+  List<Performance> findByPerformanceIdIn(List<String> performanceIds);
+
+  /** 추천: 장르별 인기 공연 (rating DESC, updatedate DESC) */
+  @Query("""
+      SELECT p FROM Performance p
+      WHERE (:genre IS NULL OR :genre = '' OR p.genrenm = :genre)
+      ORDER BY p.rating DESC NULLS LAST, p.updatedate DESC
+      """)
+  List<Performance> findPopularByGenre(
+      @Param("genre") String genre,
+      Pageable pageable
+  );
+
+  /** 추천: 장르별 최신 공연 (updatedate DESC) */
+  @Query("""
+      SELECT p FROM Performance p
+      WHERE (:genre IS NULL OR :genre = '' OR p.genrenm = :genre)
+      ORDER BY p.updatedate DESC
+      """)
+  List<Performance> findLatestByGenre(
+      @Param("genre") String genre,
+      Pageable pageable
+  );
+
+  /** 추천: 전체 인기 공연 */
+  @Query("""
+      SELECT p FROM Performance p
+      ORDER BY p.rating DESC NULLS LAST, p.updatedate DESC
+      """)
+  List<Performance> findPopularPerformances(Pageable pageable);
+
+  /** 추천: 전체 최신 공연 */
+  @Query("""
+      SELECT p FROM Performance p
+      ORDER BY p.updatedate DESC
+      """)
+  List<Performance> findLatestPerformances(Pageable pageable);
+
 }
