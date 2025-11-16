@@ -44,4 +44,8 @@ src/main/java/yegam/opale_be/global/init/
 
 
 
+# Docker local MySQL volume
+mysql-data/
+
+
 
