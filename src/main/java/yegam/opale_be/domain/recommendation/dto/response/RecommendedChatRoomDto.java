@@ -10,21 +10,33 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(title = "RecommendedChatRoom DTO", description = "추천된 채팅방 데이터 DTO")
+@Schema(title = "RecommendedChatRoom DTO", description = "추천된 채팅방 데이터 DTO (기본 채팅방 DTO와 구조 통일)")
 public class RecommendedChatRoomDto {
 
-  @Schema(description = "채팅방 ID", example = "42")
+  @Schema(description = "채팅방 ID")
   private Long roomId;
 
-  @Schema(description = "채팅방 제목", example = "레미제라블 관람후기방")
+  @Schema(description = "채팅방 제목")
   private String title;
 
-  @Schema(description = "최근 메시지 내용", example = "오늘 공연 너무 좋았어요!")
+  @Schema(description = "썸네일 URL")
+  private String thumbnailUrl;
+
+  @Schema(description = "최근 메시지")
   private String lastMessage;
 
   @Schema(description = "최근 메시지 시간")
   private LocalDateTime lastMessageTime;
 
-  @Schema(description = "채팅방 방문수", example = "3412")
+  @Schema(description = "채팅방 방문수 (null → 0)")
   private Long visitCount;
+
+  @Schema(description = "활성 여부")
+  private Boolean isActive;
+
+  @Schema(description = "공연명")
+  private String performanceTitle;
+
+  @Schema(description = "공연 ID")
+  private String performanceId;
 }
