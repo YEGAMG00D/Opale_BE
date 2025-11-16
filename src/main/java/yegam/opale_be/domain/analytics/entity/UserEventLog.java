@@ -33,6 +33,9 @@ public class UserEventLog {
   @Column(name = "target_id", length = 20)
   private String targetId;
 
+  @Column(name = "weight")
+  private Integer weight;
+
   @CreationTimestamp
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;

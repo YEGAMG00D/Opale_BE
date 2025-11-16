@@ -1,14 +1,10 @@
-package yegam.opale_be.domain.recommand.performance.entity;
+package yegam.opale_be.domain.preference.entity;
 
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.global.common.BaseTimeEntity;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_preference_vectors")
