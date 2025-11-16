@@ -1,82 +1,52 @@
-name: Deploy Spring Boot to EC2 (DEBUG MODE)
+name: Deploy Spring Boot to EC2 with Docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]  # main에 머지/푸시될 때만 배포
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
+      # 1️⃣ 레포 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Debug — root directory
-        run: |
-          echo "📌 현재 위치(pwd):"
-          pwd
-          echo "📌 현재 디렉토리 목록:"
-          ls -al
-
-      - name: Build JAR
-        run: |
-          echo "===================="
-          echo "📌 GRADLE BUILD START"
-          echo "===================="
-          
-          pwd
-          ls -al
-          
-          chmod +x gradlew
-          ./gradlew clean build -x test
-
-          echo "===================="
-          echo "📁 build/libs 디렉토리 목록"
-          echo "===================="
-          ls -al build/libs
-
-          echo "===================="
-          echo "📌 실행 가능한 bootJar만 app.jar로 복사"
-          echo "===================="
-          cp build/libs/*SNAPSHOT.jar build/libs/app.jar
-
-          echo "📁 build/libs 최종 상태"
-          ls -al build/libs
-
-      - name: Debug — jar upload source
-        run: |
-          echo "📁 Actions 내부 JAR 경로 확인"
-          ls -al build/libs
-
-      - name: Upload ONLY app.jar to EC2 using SCP
+      # 2️⃣ EC2로 프로젝트 업로드
+      - name: Upload project to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/app.jar"
-          target: "/home/ec2-user/opale_be/jar/app.jar"
+          source: "./"
+          target: "/home/ec2-user/opale_be"
           overwrite: true
+          rm: true
 
-      - name: Deploy on EC2
+      # 3️⃣ EC2 접속 → Docker 빌드 및 재배포
+      - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            echo "📌 EC2 접속 성공"
-
-            echo "📁 JAR 업로드 경로 확인"
-            ls -al /home/ec2-user/opale_be/jar/
-
-            docker network create opale-net || true
-            docker rm -f opale-be || true
-
+            set -e
             cd /home/ec2-user/opale_be
+
+            echo "🛠 Docker 네트워크 연결 확인..."
+            docker network create opale-net || true
+            docker network connect opale-net mysql-opale || true
+
+            echo "🔨 새 이미지 빌드 중..."
             docker build -t opale-be .
 
+            echo "🧹 기존 컨테이너 종료 및 삭제..."
+            docker rm -f opale-be || true
+
+            echo "🚀 새 컨테이너 실행 (application.yml 자동 마운트)"
             docker run -d \
               --name opale-be \
               --network opale-net \
@@ -85,8 +55,4 @@ jobs:
               -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
               opale-be
 
-            docker ps -a
-            docker logs opale-be || echo "❌ 로그 없음"
-
-      - name: Finished
-        run: echo "🚀 모든 작업 완료 (DEBUG MODE)"
+            echo "🎉 Deployment completed successfully!"
