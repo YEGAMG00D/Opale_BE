@@ -5,6 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.preference.entity.UserPreferenceVector;
+import yegam.opale_be.domain.preference.repository.UserPreferenceVectorRepository;
+import yegam.opale_be.domain.preference.util.ZeroVectorUtil;
 import yegam.opale_be.domain.user.dto.request.*;
 import yegam.opale_be.domain.user.dto.response.*;
 import yegam.opale_be.domain.user.entity.User;
@@ -25,25 +28,15 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
 
+  // ⭐ 추가
+  private final UserPreferenceVectorRepository vectorRepository;
+  private final ZeroVectorUtil zeroVectorUtil;
+
   // ---------------------------------------------------------------------
-  // 회원가입 및 회원 정보 유효성 체크 용
+  // 회원가입
   // ---------------------------------------------------------------------
-
-  /** 이메일 중복 확인 */
-  @Transactional(readOnly = true)
-  public boolean checkDuplicateEmail(String email) {
-    return userRepository.existsByEmail(email);
-  }
-
-  /** 닉네임 중복 확인 */
-  @Transactional(readOnly = true)
-  public CheckNicknameResponseDto checkDuplicateNickname(String nickname) {
-    boolean exists = userRepository.existsByNickname(nickname);
-    return userMapper.toCheckNicknameResponseDto(nickname, exists);
-  }
-
-  /** 회원가입 */
   public UserResponseDto signUp(UserSignUpRequestDto dto) {
+
     if (userRepository.existsByEmail(dto.getEmail())) {
       throw new CustomException(UserErrorCode.DUPLICATE_EMAIL);
     }
@@ -68,15 +61,35 @@ public class UserService {
     userRepository.save(user);
     log.info("회원가입 완료: userId={}, email={}", user.getUserId(), user.getEmail());
 
+    // ⭐ A. 가입 시 0-vector 자동 생성
+    UserPreferenceVector vector = UserPreferenceVector.builder()
+        .userId(user.getUserId())
+        .embeddingVector(zeroVectorUtil.generateZeroVectorJson())  // 1536차원 0 벡터
+        .user(user)
+        .build();
+
+    vectorRepository.save(vector);
+    log.info("⭐ 신규 유저 벡터 초기화 완료: userId={}", user.getUserId());
+
     return userMapper.toUserResponseDto(user);
   }
 
-  
+
   // ---------------------------------------------------------------------
-  // 마이페이지 용
+  // 이하 기존 코드 그대로
   // ---------------------------------------------------------------------
 
-  /** 내 정보 조회 */
+  @Transactional(readOnly = true)
+  public CheckNicknameResponseDto checkDuplicateNickname(String nickname) {
+    boolean exists = userRepository.existsByNickname(nickname);
+    return userMapper.toCheckNicknameResponseDto(nickname, exists);
+  }
+
+  @Transactional(readOnly = true)
+  public boolean checkDuplicateEmail(String email) {
+    return userRepository.existsByEmail(email);
+  }
+
   @Transactional(readOnly = true)
   public UserResponseDto getUser(Long userId) {
     return userRepository.findById(userId)
@@ -85,12 +98,10 @@ public class UserService {
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
 
-  /** 내 정보 수정 (닉네임 중복 검사 포함) */
   public UserResponseDto updateUser(Long userId, UserUpdateRequestDto dto) {
     return userRepository.findById(userId)
         .map(user -> {
           if (dto.getNickname() != null) {
-            // 닉네임 중복 검사 (자기 자신 제외)
             if (userRepository.existsByNickname(dto.getNickname())
                 && !dto.getNickname().equals(user.getNickname())) {
               throw new CustomException(UserErrorCode.DUPLICATE_NICKNAME);
@@ -108,7 +119,6 @@ public class UserService {
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
 
-  /** 비밀번호 변경 */
   public void changePassword(Long userId, PasswordChangeRequestDto dto) {
     userRepository.findById(userId)
         .map(user -> {
@@ -122,7 +132,6 @@ public class UserService {
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
 
-  /** 회원 탈퇴(Soft Delete) */
   public void deleteUser(Long userId, UserDeleteRequestDto dto) {
     userRepository.findById(userId)
         .map(user -> {

@@ -32,5 +32,5 @@ public class ChatRoomUpdateDto {
   private Boolean isActive;
 
   @Schema(description = "누적 방문자 수", example = "128")
-  private Integer visitCount;
+  private Long visitCount;
 }

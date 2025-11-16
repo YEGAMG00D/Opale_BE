@@ -14,6 +14,7 @@ import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.preference.entity.UserPreferenceVector;
 import yegam.opale_be.domain.preference.repository.UserPreferenceVectorRepository;
+import yegam.opale_be.domain.preference.util.ZeroVectorUtil;
 import yegam.opale_be.domain.recommendation.dto.response.RecommendationChatRoomListResponseDto;
 import yegam.opale_be.domain.recommendation.dto.response.RecommendationPerformanceListResponseDto;
 import yegam.opale_be.domain.recommendation.dto.response.RecommendationPlaceListResponseDto;
@@ -44,6 +45,9 @@ public class RecommendationService {
   private final RecommendationMapper recommendationMapper;
   private final EmbeddingVectorUtil embeddingVectorUtil;
   private final PineconeClientUtil pineconeClientUtil;
+
+  // ⭐ cold-start 대응용 0-vector 유틸
+  private final ZeroVectorUtil zeroVectorUtil;
 
   // ----------------------------------------------------------------------
   // 공통 헬퍼
@@ -100,7 +104,6 @@ public class RecommendationService {
       dtoList.add(recommendationMapper.toPerformance(p, score));
     }
 
-
     switch (normalizedSort) {
 
       case "latest" -> dtoList.sort(
@@ -141,9 +144,21 @@ public class RecommendationService {
   // 1) 개인화 추천 (로그인 사용자)
   // ----------------------------------------------------------------------
 
+  /** ⭐ 유저 개인화 추천 (벡터 없으면 0-vector 생성 후 사용) */
+  @Transactional  // readOnly=false로 override (새 벡터 생성 가능)
   public RecommendationPerformanceListResponseDto getUserRecommendations(Long userId, Integer size, String sort) {
+
     UserPreferenceVector vectorEntity = preferenceRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(RecommendationErrorCode.USER_VECTOR_NOT_FOUND));
+        .orElseGet(() -> {
+          // 벡터 없으면 1536차원 0-vector로 초기화
+          UserPreferenceVector newVec = UserPreferenceVector.builder()
+              .userId(userId)
+              .embeddingVector(zeroVectorUtil.generateZeroVectorJson())
+              .build();
+          UserPreferenceVector saved = preferenceRepository.save(newVec);
+          log.info("⭐ 사용자 벡터 초기화 (getUserRecommendations): userId={}", userId);
+          return saved;
+        });
 
     List<Double> vector = embeddingVectorUtil.parseToList(vectorEntity.getEmbeddingVector());
     return buildVectorBasedRecommendation(vector, size, sort);
@@ -153,9 +168,20 @@ public class RecommendationService {
   // 2) 운영자용 개인화 추천 (userId 직접 입력)
   // ----------------------------------------------------------------------
 
+  /** ⭐ 운영자용도 동일하게 cold-start 방어 */
+  @Transactional
   public RecommendationPerformanceListResponseDto getUserRecommendationsByAdmin(Long userId, Integer size, String sort) {
+
     UserPreferenceVector vectorEntity = preferenceRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(RecommendationErrorCode.USER_VECTOR_NOT_FOUND));
+        .orElseGet(() -> {
+          UserPreferenceVector newVec = UserPreferenceVector.builder()
+              .userId(userId)
+              .embeddingVector(zeroVectorUtil.generateZeroVectorJson())
+              .build();
+          UserPreferenceVector saved = preferenceRepository.save(newVec);
+          log.info("⭐ 관리자 호출로 사용자 벡터 초기화: userId={}", userId);
+          return saved;
+        });
 
     List<Double> vector = embeddingVectorUtil.parseToList(vectorEntity.getEmbeddingVector());
     return buildVectorBasedRecommendation(vector, size, sort);
@@ -260,8 +286,8 @@ public class RecommendationService {
   }
 
   // ------------------------------------------------------
-// 7) 인기 공연장 추천
-// ------------------------------------------------------
+  // 7) 인기 공연장 추천
+  // ------------------------------------------------------
   public RecommendationPlaceListResponseDto getPopularPlaces(Integer size) {
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
@@ -280,10 +306,9 @@ public class RecommendationService {
         .build();
   }
 
-
   // ------------------------------------------------------
-// 8) 인기 채팅방 추천
-// ------------------------------------------------------
+  // 8) 인기 채팅방 추천
+  // ------------------------------------------------------
   public RecommendationChatRoomListResponseDto getPopularChatRooms(Integer size) {
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
@@ -301,10 +326,4 @@ public class RecommendationService {
         .recommendations(dtoList)
         .build();
   }
-
-
-
-
-
-
 }
