@@ -38,7 +38,7 @@ public class ChatRoomResponseDto {
   private String thumbnailUrl;
 
   @Schema(description = "누적 방문자 수", example = "153")
-  private int visitCount;
+  private Long visitCount;
 
   @Schema(description = "최근 메시지", example = "오늘 공연 정말 멋졌어요!")
   private String lastMessage;

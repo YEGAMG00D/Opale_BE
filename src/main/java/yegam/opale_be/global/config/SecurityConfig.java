@@ -73,6 +73,23 @@ public class SecurityConfig {
             // 채팅방 목록(GET)도 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms").permitAll()
 
+            // 추천 API (비로그인 허용)
+            .requestMatchers(HttpMethod.GET,
+                "/api/recommendations/popular",
+                "/api/recommendations/latest",
+                "/api/recommendations/genre",
+                "/api/recommendations/popular/places",
+                "/api/recommendations/popular/chatrooms",
+                "/api/recommendations/performance/**"
+            ).permitAll()
+
+            // 개인화 추천은 로그인 필요
+            .requestMatchers(HttpMethod.GET,
+                "/api/recommendations/user",
+                "/api/recommendations/user/**"
+            ).authenticated()
+
+
             // 나머지 채팅 관련 요청은 로그인 필요
             .requestMatchers("/api/chat/**").authenticated()
 

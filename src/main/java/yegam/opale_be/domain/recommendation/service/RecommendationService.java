@@ -5,13 +5,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.chat.room.entity.ChatRoom;
+import yegam.opale_be.domain.chat.room.repository.ChatRoomRepository;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.culture.performance.exception.PerformanceErrorCode;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
+import yegam.opale_be.domain.place.entity.Place;
+import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.preference.entity.UserPreferenceVector;
 import yegam.opale_be.domain.preference.repository.UserPreferenceVectorRepository;
-import yegam.opale_be.domain.recommendation.dto.response.RecommendationListResponseDto;
-import yegam.opale_be.domain.recommendation.dto.response.RecommendedPerformanceDto;
+import yegam.opale_be.domain.preference.util.ZeroVectorUtil;
+import yegam.opale_be.domain.recommendation.dto.response.*;
 import yegam.opale_be.domain.recommendation.exception.RecommendationErrorCode;
 import yegam.opale_be.domain.recommendation.mapper.RecommendationMapper;
 import yegam.opale_be.domain.recommendation.util.EmbeddingVectorUtil;
@@ -30,14 +34,18 @@ public class RecommendationService {
 
   private final UserPreferenceVectorRepository preferenceRepository;
   private final PerformanceRepository performanceRepository;
+  private final PlaceRepository placeRepository;
+  private final ChatRoomRepository chatRoomRepository;
+
   private final RecommendationMapper recommendationMapper;
   private final EmbeddingVectorUtil embeddingVectorUtil;
   private final PineconeClientUtil pineconeClientUtil;
 
-  // ----------------------------------------------------------------------
-  // 공통 헬퍼
-  // ----------------------------------------------------------------------
+  private final ZeroVectorUtil zeroVectorUtil; // ⭐ cold-start helper
 
+  // ================================
+  // common helpers
+  // ================================
   private String normalizeSort(String sort) {
     if (sort == null || sort.isBlank()) return "auto";
     return sort.toLowerCase();
@@ -49,10 +57,8 @@ public class RecommendationService {
     return size;
   }
 
-  private RecommendationListResponseDto buildVectorBasedRecommendation(
-      List<Double> vector,
-      int size,
-      String sort
+  private RecommendationPerformanceListResponseDto buildVectorBasedRecommendation(
+      List<Double> vector, int size, String sort
   ) {
     String normalizedSort = normalizeSort(sort);
     int topK = normalizeSize(size);
@@ -60,7 +66,7 @@ public class RecommendationService {
     List<PineconeMatch> matches = pineconeClientUtil.query(vector, topK);
 
     if (matches.isEmpty()) {
-      return RecommendationListResponseDto.builder()
+      return RecommendationPerformanceListResponseDto.builder()
           .totalCount(0)
           .requestedSize(topK)
           .sort(normalizedSort)
@@ -68,9 +74,7 @@ public class RecommendationService {
           .build();
     }
 
-    List<String> ids = matches.stream()
-        .map(PineconeMatch::getId)
-        .toList();
+    List<String> ids = matches.stream().map(PineconeMatch::getId).toList();
 
     Map<String, Double> scoreMap = matches.stream()
         .collect(Collectors.toMap(PineconeMatch::getId, PineconeMatch::getScore));
@@ -81,44 +85,29 @@ public class RecommendationService {
         .collect(Collectors.toMap(Performance::getPerformanceId, p -> p));
 
     List<RecommendedPerformanceDto> dtoList = new ArrayList<>();
-
     for (String id : ids) {
       Performance p = performanceMap.get(id);
       if (p == null) continue;
       Double score = scoreMap.getOrDefault(id, 0.0);
-      dtoList.add(recommendationMapper.toRecommendedPerformanceDto(p, score));
+      dtoList.add(recommendationMapper.toPerformance(p, score));
     }
-
 
     switch (normalizedSort) {
-
-      case "latest" -> dtoList.sort(
-          Comparator.comparing(
+      case "latest" ->
+          dtoList.sort(Comparator.comparing(
               (RecommendedPerformanceDto d) -> d.getStartDate(),
               Comparator.nullsLast(Comparator.naturalOrder())
-          ).reversed()
-      );
+          ).reversed());
 
-      case "popularity" -> dtoList.sort(
-          Comparator.comparing(
+      case "popularity" ->
+          dtoList.sort(Comparator.comparing(
               (RecommendedPerformanceDto d) -> d.getRating() != null ? d.getRating() : 0.0
-          ).reversed()
-      );
+          ).reversed());
 
-      case "similarity" -> {
-        // do nothing — Pinecone score 유지
-      }
-
-      case "auto" -> {
-        // do nothing — Pinecone score 유지
-      }
-
-      default -> {
-        // do nothing
-      }
+      // similarity / auto → Pinecone score 유지
     }
 
-    return RecommendationListResponseDto.builder()
+    return RecommendationPerformanceListResponseDto.builder()
         .totalCount(dtoList.size())
         .requestedSize(topK)
         .sort(normalizedSort)
@@ -126,59 +115,75 @@ public class RecommendationService {
         .build();
   }
 
-  // ----------------------------------------------------------------------
-  // 1) 개인화 추천 (로그인 사용자)
-  // ----------------------------------------------------------------------
+  // ================================
+  // 1) Personalized Recommendation
+  // ================================
+  @Transactional  // ⭐ save 안 하지만 read-only false (future safe)
+  public RecommendationPerformanceListResponseDto getUserRecommendations(Long userId, Integer size, String sort) {
 
-  public RecommendationListResponseDto getUserRecommendations(Long userId, Integer size, String sort) {
-    UserPreferenceVector vectorEntity = preferenceRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(RecommendationErrorCode.USER_VECTOR_NOT_FOUND));
+    UserPreferenceVector vec = preferenceRepository.findById(userId).orElse(null);
 
-    List<Double> vector = embeddingVectorUtil.parseToList(vectorEntity.getEmbeddingVector());
+    List<Double> vector;
+    if (vec == null) {
+      // ⭐ 벡터 없으면 Zero Vector 사용
+      vector = zeroVectorUtil.generateZeroVector();
+      log.info("⭐ Cold-start user → zero vector 사용 (userId={})", userId);
+    } else {
+      vector = embeddingVectorUtil.parseToList(vec.getEmbeddingVector());
+    }
+
     return buildVectorBasedRecommendation(vector, size, sort);
   }
 
-  // ----------------------------------------------------------------------
-  // 2) 운영자용 개인화 추천 (userId 직접 입력)
-  // ----------------------------------------------------------------------
+  // ================================
+  // 2) Personalized (Admin Tool)
+  // ================================
+  @Transactional
+  public RecommendationPerformanceListResponseDto getUserRecommendationsByAdmin(Long userId, Integer size, String sort) {
 
-  public RecommendationListResponseDto getUserRecommendationsByAdmin(Long userId, Integer size, String sort) {
-    UserPreferenceVector vectorEntity = preferenceRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(RecommendationErrorCode.USER_VECTOR_NOT_FOUND));
+    UserPreferenceVector vec = preferenceRepository.findById(userId).orElse(null);
 
-    List<Double> vector = embeddingVectorUtil.parseToList(vectorEntity.getEmbeddingVector());
+    List<Double> vector;
+    if (vec == null) {
+      vector = zeroVectorUtil.generateZeroVector();
+      log.info("⭐ Admin cold-start user → zero vector 사용 (userId={})", userId);
+    } else {
+      vector = embeddingVectorUtil.parseToList(vec.getEmbeddingVector());
+    }
+
     return buildVectorBasedRecommendation(vector, size, sort);
   }
 
-  // ----------------------------------------------------------------------
-  // 3) 특정 공연과 비슷한 공연 추천
-  // ----------------------------------------------------------------------
+  // ================================
+  // 3) Similarity
+  // ================================
+  public RecommendationPerformanceListResponseDto getSimilarPerformances(String performanceId, Integer size, String sort) {
 
-  public RecommendationListResponseDto getSimilarPerformances(String performanceId, Integer size, String sort) {
-    Performance performance = performanceRepository.findById(performanceId)
+    Performance p = performanceRepository.findById(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
 
-    if (performance.getEmbeddingVector() == null || performance.getEmbeddingVector().isBlank()) {
+    if (p.getEmbeddingVector() == null || p.getEmbeddingVector().isBlank()) {
       throw new CustomException(RecommendationErrorCode.PERFORMANCE_VECTOR_NOT_FOUND);
     }
 
-    List<Double> vector = embeddingVectorUtil.parseToList(performance.getEmbeddingVector());
-    RecommendationListResponseDto result = buildVectorBasedRecommendation(vector, size, sort);
+    List<Double> vector = embeddingVectorUtil.parseToList(p.getEmbeddingVector());
+    RecommendationPerformanceListResponseDto result = buildVectorBasedRecommendation(vector, size, sort);
 
+    // 동일 공연 제외
     List<RecommendedPerformanceDto> filtered = result.getRecommendations().stream()
         .filter(dto -> !performanceId.equals(dto.getPerformanceId()))
-        .collect(Collectors.toList());
+        .toList();
 
     result.setRecommendations(filtered);
     result.setTotalCount(filtered.size());
     return result;
   }
 
-  // ----------------------------------------------------------------------
-  // 4) 장르 기반 추천 (DB 기반)
-  // ----------------------------------------------------------------------
+  // ================================
+  // 4) Genre
+  // ================================
+  public RecommendationPerformanceListResponseDto getGenreRecommendations(String genre, Integer size, String sort) {
 
-  public RecommendationListResponseDto getGenreRecommendations(String genre, Integer size, String sort) {
     String normalizedSort = normalizeSort(sort);
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
@@ -193,10 +198,10 @@ public class RecommendationService {
     }
 
     List<RecommendedPerformanceDto> dtoList = performances.stream()
-        .map(p -> recommendationMapper.toRecommendedPerformanceDto(p, null))
-        .collect(Collectors.toList());
+        .map(p -> recommendationMapper.toPerformance(p, null))
+        .toList();
 
-    return RecommendationListResponseDto.builder()
+    return RecommendationPerformanceListResponseDto.builder()
         .totalCount(dtoList.size())
         .requestedSize(limit)
         .sort(normalizedSort)
@@ -204,21 +209,20 @@ public class RecommendationService {
         .build();
   }
 
-  // ----------------------------------------------------------------------
-  // 5) 인기 기반 추천
-  // ----------------------------------------------------------------------
+  // ================================
+  // 5) Popular
+  // ================================
+  public RecommendationPerformanceListResponseDto getPopularRecommendations(Integer size) {
 
-  public RecommendationListResponseDto getPopularRecommendations(Integer size) {
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
 
-    List<Performance> performances = performanceRepository.findPopularPerformances(pageable);
+    List<Performance> list = performanceRepository.findPopularPerformances(pageable);
 
-    List<RecommendedPerformanceDto> dtoList = performances.stream()
-        .map(p -> recommendationMapper.toRecommendedPerformanceDto(p, null))
-        .collect(Collectors.toList());
+    List<RecommendedPerformanceDto> dtoList =
+        list.stream().map(p -> recommendationMapper.toPerformance(p, null)).toList();
 
-    return RecommendationListResponseDto.builder()
+    return RecommendationPerformanceListResponseDto.builder()
         .totalCount(dtoList.size())
         .requestedSize(limit)
         .sort("popularity")
@@ -226,24 +230,67 @@ public class RecommendationService {
         .build();
   }
 
-  // ----------------------------------------------------------------------
-  // 6) 최신 공연 추천
-  // ----------------------------------------------------------------------
+  // ================================
+  // 6) Latest
+  // ================================
+  public RecommendationPerformanceListResponseDto getLatestRecommendations(Integer size) {
 
-  public RecommendationListResponseDto getLatestRecommendations(Integer size) {
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
 
-    List<Performance> performances = performanceRepository.findLatestPerformances(pageable);
+    List<Performance> list = performanceRepository.findLatestPerformances(pageable);
 
-    List<RecommendedPerformanceDto> dtoList = performances.stream()
-        .map(p -> recommendationMapper.toRecommendedPerformanceDto(p, null))
-        .collect(Collectors.toList());
+    List<RecommendedPerformanceDto> dtoList =
+        list.stream().map(p -> recommendationMapper.toPerformance(p, null)).toList();
 
-    return RecommendationListResponseDto.builder()
+    return RecommendationPerformanceListResponseDto.builder()
         .totalCount(dtoList.size())
         .requestedSize(limit)
         .sort("latest")
+        .recommendations(dtoList)
+        .build();
+  }
+
+  // ================================
+  // 7) Popular Places
+  // ================================
+  public RecommendationPlaceListResponseDto getPopularPlaces(Integer size) {
+
+    int limit = normalizeSize(size);
+    PageRequest pageable = PageRequest.of(0, limit);
+
+    List<Place> list = placeRepository.findPopularPlaces(pageable);
+
+    List<RecommendedPlaceDto> dtoList = list.stream()
+        .map(recommendationMapper::toPlace)
+        .toList();
+
+    return RecommendationPlaceListResponseDto.builder()
+        .totalCount(dtoList.size())
+        .requestedSize(limit)
+        .sort("popularity")
+        .recommendations(dtoList)
+        .build();
+  }
+
+  // ================================
+  // 8) Popular Chat Rooms
+  // ================================
+  public RecommendationChatRoomListResponseDto getPopularChatRooms(Integer size) {
+
+    int limit = normalizeSize(size);
+    PageRequest pageable = PageRequest.of(0, limit);
+
+    List<ChatRoom> list = chatRoomRepository.findPopularChatRooms(pageable);
+
+    List<RecommendedChatRoomDto> dtoList = list.stream()
+        .map(recommendationMapper::toChatRoom)
+        .toList();
+
+    return RecommendationChatRoomListResponseDto.builder()
+        .totalCount(dtoList.size())
+        .requestedSize(limit)
+        .sort("popularity")
         .recommendations(dtoList)
         .build();
   }

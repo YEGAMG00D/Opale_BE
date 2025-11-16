@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 
 import java.time.LocalDate;
@@ -13,6 +14,12 @@ import java.util.Optional;
 
 @Repository
 public interface PerformanceRepository extends JpaRepository<Performance, String> {
+
+  /** ⭐ 공연 조회수 증가 */
+  @Modifying
+  @Transactional
+  @Query("UPDATE Performance p SET p.viewCount = p.viewCount + 1 WHERE p.performanceId = :performanceId")
+  void incrementViewCount(@Param("performanceId") String performanceId);
 
   /** 통합 검색: 장르 + 키워드 + 지역 (AND 조건) + 정렬 + 페이징 */
   @Query("""
@@ -86,7 +93,7 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
   """)
   Optional<Performance> findByIdWithInfoImages(@Param("performanceId") String performanceId);
 
-  // 공연명 일부 일치 + 공연일자 기준 상연 중인 공연만 조회
+  /** 공연명 일부 일치 + 공연일자 기준 상연 중인 공연만 조회 */
   @Query("""
       SELECT p FROM Performance p
       WHERE LOWER(p.title) LIKE LOWER(CONCAT('%', :keyword, '%'))
@@ -98,16 +105,14 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
       @Param("date") LocalDate date
   );
 
-
-
   /** 추천: ID 목록으로 공연 조회 */
   List<Performance> findByPerformanceIdIn(List<String> performanceIds);
 
-  /** 추천: 장르별 인기 공연 (rating DESC, updatedate DESC) */
+  /** 추천: 장르별 인기 공연 (조회수 + 평점 + 최신순) */
   @Query("""
       SELECT p FROM Performance p
       WHERE (:genre IS NULL OR :genre = '' OR p.genrenm = :genre)
-      ORDER BY p.rating DESC NULLS LAST, p.updatedate DESC
+      ORDER BY p.viewCount DESC, p.rating DESC NULLS LAST, p.updatedate DESC
       """)
   List<Performance> findPopularByGenre(
       @Param("genre") String genre,
@@ -125,10 +130,10 @@ public interface PerformanceRepository extends JpaRepository<Performance, String
       Pageable pageable
   );
 
-  /** 추천: 전체 인기 공연 */
+  /** 추천: 전체 인기 공연 (조회수 + 평점 + 최신순) */
   @Query("""
       SELECT p FROM Performance p
-      ORDER BY p.rating DESC NULLS LAST, p.updatedate DESC
+      ORDER BY p.viewCount DESC, p.rating DESC NULLS LAST, p.updatedate DESC
       """)
   List<Performance> findPopularPerformances(Pageable pageable);
 
