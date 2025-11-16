@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.place.entity.Place;
 
 import java.util.List;
@@ -12,6 +13,12 @@ import java.util.Optional;
 
 @Repository
 public interface PlaceRepository extends JpaRepository<Place, String> {
+
+  /** ⭐ 공연장 조회수 증가 */
+  @Modifying
+  @Transactional
+  @Query("UPDATE Place p SET p.viewCount = p.viewCount + 1 WHERE p.placeId = :placeId")
+  void incrementViewCount(@Param("placeId") String placeId);
 
   /** 공연장 검색 */
   @Query("""
@@ -24,7 +31,7 @@ public interface PlaceRepository extends JpaRepository<Place, String> {
   /** 임시용 근처 공연장 (테스트용) */
   List<Place> findTop10ByOrderByNameAsc();
 
-  /** 좌표 기반 근처 공연장 조회 (MySQL 8.0 이상) */
+  /** 좌표 기반 근처 공연장 조회 */
   @Query(value = """
       SELECT 
         p.place_id AS placeId,
@@ -43,7 +50,6 @@ public interface PlaceRepository extends JpaRepository<Place, String> {
       @Param("radius") int radius
   );
 
-  // 공연장 이름 일부 일치 검색 (대소문자 무시)
   @Query("""
       SELECT p FROM Place p
       WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))

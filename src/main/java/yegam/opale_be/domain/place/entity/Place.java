@@ -79,9 +79,12 @@ public class Place {
   @Column(name = "parkinglot")
   private Boolean parkinglot;
 
-  // ✅ 새로 추가된 평균 평점 컬럼
   @Column(name = "rating")
   private Double rating;
+
+  /** 공연장 조회수 추가 */
+  @Column(name = "view_count", nullable = false)
+  private Long viewCount = 0L;
 
   @OneToMany(mappedBy = "place", fetch = FetchType.LAZY)
   private List<Performance> performances;
