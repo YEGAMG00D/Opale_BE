@@ -3,9 +3,11 @@ package yegam.opale_be;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 
 @EnableJpaAuditing
+@EnableScheduling
 @SpringBootApplication(scanBasePackages = "yegam.opale_be")
 public class OpaleBeApplication {
 

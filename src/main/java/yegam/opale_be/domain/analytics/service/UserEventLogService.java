@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import yegam.opale_be.domain.analytics.dto.request.UserEventLogCreateRequestDto;
 import yegam.opale_be.domain.analytics.dto.request.UserEventLogSearchRequestDto;
 import yegam.opale_be.domain.analytics.dto.response.UserEventLogListResponseDto;
@@ -13,6 +14,10 @@ import yegam.opale_be.domain.analytics.entity.UserEventLog;
 import yegam.opale_be.domain.analytics.exception.AnalyticsErrorCode;
 import yegam.opale_be.domain.analytics.mapper.UserEventLogMapper;
 import yegam.opale_be.domain.analytics.repository.UserEventLogRepository;
+import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
+import yegam.opale_be.domain.place.repository.PlaceRepository;
+import yegam.opale_be.domain.chat.room.repository.ChatRoomRepository;
+
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.domain.user.exception.UserErrorCode;
 import yegam.opale_be.domain.user.repository.UserRepository;
@@ -32,13 +37,10 @@ public class UserEventLogService {
   private final UserEventLogMapper userEventLogMapper;
   private final UserRepository userRepository;
 
-  /**
-   * 이벤트 타입별 기본 가중치 설정
-   * - VIEW: 1
-   * - FAVORITE: 3
-   * - BOOKED: 5
-   * - REVIEW_WRITE: 10
-   */
+  private final PerformanceRepository performanceRepository;
+  private final PlaceRepository placeRepository;
+  private final ChatRoomRepository chatRoomRepository;
+
   private static final Map<UserEventLog.EventType, Integer> DEFAULT_WEIGHTS = Map.of(
       UserEventLog.EventType.VIEW, 1,
       UserEventLog.EventType.FAVORITE, 3,
@@ -46,46 +48,58 @@ public class UserEventLogService {
       UserEventLog.EventType.REVIEW_WRITE, 10
   );
 
-  /**
-   * 사용자 행동 로그 생성
-   *
-   * @param userId 인증된 사용자 ID (@AuthenticationPrincipal)
-   * @param dto    이벤트 정보
-   * @return 생성된 로그 응답 DTO
-   */
+  /** ⭐ 사용자 행동 로그 생성 + 조회수 증가 */
   @Transactional
   public UserEventLogResponseDto createUserEventLog(Long userId, UserEventLogCreateRequestDto dto) {
-    // 1) 사용자 검증
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
-    // 2) 이벤트 타입 파싱 (Mapper 내부에서 검증)
     UserEventLog.EventType eventType = parseEventType(dto.getEventType());
-
-    // 3) weight 결정 (DTO에 없으면 기본 가중치 사용)
     int weight = determineWeight(eventType, dto.getWeight());
 
-    // 4) Entity 생성 & 저장
     UserEventLog entity = userEventLogMapper.toEntity(user, dto, weight);
     UserEventLog saved = userEventLogRepository.save(entity);
 
-    log.info("✅ 사용자 행동 로그 생성: userId={}, eventType={}, targetType={}, targetId={}, weight={}",
-        userId, eventType, dto.getTargetType(), dto.getTargetId(), weight);
+    log.info("🎯 로그 생성: user={}, type={}, targetType={}, targetId={}",
+        userId, eventType, dto.getTargetType(), dto.getTargetId());
 
-    // 5) 응답 DTO 변환
+    // ========================
+    // ⭐ 조회수 증가 로직
+    // ========================
+    if (eventType == UserEventLog.EventType.VIEW) {
+
+      switch (dto.getTargetType().toUpperCase()) {
+
+        case "PERFORMANCE" -> {
+          performanceRepository.incrementViewCount(dto.getTargetId());
+          log.info("📈 공연 조회수 +1 → {}", dto.getTargetId());
+        }
+
+        case "PLACE" -> {
+          placeRepository.incrementViewCount(dto.getTargetId());
+          log.info("📈 공연장 조회수 +1 → {}", dto.getTargetId());
+        }
+
+        case "CHATROOM" -> {
+          chatRoomRepository.incrementVisitCount(Long.valueOf(dto.getTargetId()));
+          log.info("📈 채팅방 방문수 +1 → {}", dto.getTargetId());
+        }
+
+        default -> log.warn("⚠ 알 수 없는 VIEW targetType={}", dto.getTargetType());
+      }
+    }
+
     return userEventLogMapper.toResponseDto(saved);
   }
 
-  /**
-   * 사용자 행동 로그 검색 (필터 + 페이징)
-   *
-   * @param dto 검색 조건 + 페이징 정보
-   * @return 로그 목록 + 페이징 DTO
-   */
+  // ===========================
+  // 검색 함수 및 내부 유틸들
+  // ===========================
+
   public UserEventLogListResponseDto searchUserEventLogs(UserEventLogSearchRequestDto dto) {
 
     Long userId = dto.getUserId();
-
     UserEventLog.EventType eventType = null;
     if (dto.getEventType() != null && !dto.getEventType().isBlank()) {
       eventType = parseEventType(dto.getEventType());
@@ -99,41 +113,35 @@ public class UserEventLogService {
     String targetId = (dto.getTargetId() != null && !dto.getTargetId().isBlank())
         ? dto.getTargetId() : null;
 
-    // 날짜 파싱
     LocalDateTime startAt = null;
     LocalDateTime endAt = null;
+
     if (dto.getStartDate() != null && !dto.getStartDate().isBlank()) {
-      LocalDate startDate = LocalDate.parse(dto.getStartDate());
-      startAt = startDate.atStartOfDay();
-    }
-    if (dto.getEndDate() != null && !dto.getEndDate().isBlank()) {
-      LocalDate endDate = LocalDate.parse(dto.getEndDate());
-      // 하루 끝까지 포함 (23:59:59)
-      endAt = endDate.atTime(23, 59, 59);
+      LocalDate start = LocalDate.parse(dto.getStartDate());
+      startAt = start.atStartOfDay();
     }
 
-    // 날짜 범위 유효성 체크
+    if (dto.getEndDate() != null && !dto.getEndDate().isBlank()) {
+      LocalDate end = LocalDate.parse(dto.getEndDate());
+      endAt = end.atTime(23, 59, 59);
+    }
+
     if (startAt != null && endAt != null && startAt.isAfter(endAt)) {
       throw new CustomException(AnalyticsErrorCode.INVALID_DATE_RANGE);
     }
 
-    // 페이징: 1부터 시작 → PageRequest는 0부터 시작
-    int page = (dto.getPage() != null && dto.getPage() > 0) ? dto.getPage() - 1 : 0;
-    int size = (dto.getSize() != null && dto.getSize() > 0) ? dto.getSize() : 20;
+    Pageable pageable = PageRequest.of(
+        dto.getPage() != null ? dto.getPage() - 1 : 0,
+        dto.getSize() != null ? dto.getSize() : 20,
+        Sort.by(Sort.Direction.DESC, "createdAt")
+    );
 
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-
-    // 검색
-    var pageResult = userEventLogRepository.searchLogs(
+    var result = userEventLogRepository.searchLogs(
         userId, eventType, targetType, targetId, startAt, endAt, pageable
     );
 
-    return userEventLogMapper.toListResponseDto(pageResult);
+    return userEventLogMapper.toListResponseDto(result);
   }
-
-  // =========================================================
-  // 내부 유틸 메서드
-  // =========================================================
 
   private UserEventLog.EventType parseEventType(String value) {
     try {
@@ -151,16 +159,8 @@ public class UserEventLogService {
     }
   }
 
-  /**
-   * 가중치 결정 로직
-   * - DTO에서 명시한 weight가 있으면 우선 사용
-   * - 없으면 DEFAULT_WEIGHTS에서 조회
-   * - 그래도 없으면 1로 기본값
-   */
-  private int determineWeight(UserEventLog.EventType eventType, Integer requestedWeight) {
-    if (requestedWeight != null) {
-      return requestedWeight;
-    }
+  private int determineWeight(UserEventLog.EventType eventType, Integer requested) {
+    if (requested != null) return requested;
     return DEFAULT_WEIGHTS.getOrDefault(eventType, 1);
   }
 }

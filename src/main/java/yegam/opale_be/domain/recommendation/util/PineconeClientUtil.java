@@ -24,38 +24,33 @@ public class PineconeClientUtil {
   @Value("${pinecone.host}")
   private String host;
 
-  @Value("${pinecone.namespace}")
-  private String namespace;
-
   @Value("${pinecone.dimension}")
   private int dimension;
 
   private final ObjectMapper objectMapper;
-
   private final RestTemplate restTemplate = new RestTemplate();
 
   /**
-   * Pinecone query 호출
-   *
-   * @param vector 검색 기준 벡터 (List<Double>)
-   * @param topK   상위 몇 개까지 조회할지
-   * @return id + score 목록
+   * Pinecone query 호출 — 최신 API 규격 대응
    */
   public List<PineconeMatch> query(List<Double> vector, int topK) {
+
     if (vector == null || vector.isEmpty()) {
       throw new CustomException(RecommendationErrorCode.VECTOR_PARSE_FAILED);
     }
 
     if (vector.size() != dimension) {
-      log.warn("Pinecone query: vector dimension mismatch. expected={}, actual={}", dimension, vector.size());
+      log.warn("⚠️ Pinecone vector dimension mismatch. expected={}, actual={}", dimension, vector.size());
     }
 
-    String url = host + "/query";
+    String url = host + "/query";   // Pinecone 최신 API endpoint
 
+    // ★ namespace 제거 (2025 API에서 필수 변경사항)
     Map<String, Object> body = new HashMap<>();
     body.put("vector", vector);
     body.put("topK", topK);
-    body.put("namespace", namespace);
+    body.put("includeValues", false);
+    body.put("includeMetadata", false);
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -67,13 +62,16 @@ public class PineconeClientUtil {
       ResponseEntity<String> response = restTemplate.postForEntity(url, entity, String.class);
 
       if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-        log.error("Pinecone query failed: status={}, body={}", response.getStatusCode(), response.getBody());
+        log.error("❌ Pinecone query failed. status={}, body={}",
+            response.getStatusCode(), response.getBody());
         throw new CustomException(RecommendationErrorCode.PINECONE_QUERY_FAILED);
       }
 
       JsonNode root = objectMapper.readTree(response.getBody());
       JsonNode matchesNode = root.get("matches");
+
       if (matchesNode == null || !matchesNode.isArray()) {
+        log.warn("⚠️ Pinecone returned no matches");
         return List.of();
       }
 
@@ -87,7 +85,7 @@ public class PineconeClientUtil {
       return matches;
 
     } catch (Exception e) {
-      log.error("Pinecone query exception", e);
+      log.error("❌ Pinecone query exception", e);
       throw new CustomException(RecommendationErrorCode.PINECONE_QUERY_FAILED);
     }
   }

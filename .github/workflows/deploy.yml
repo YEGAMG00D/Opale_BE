@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 with Docker
+name: Deploy Spring Boot to EC2 with Docker (Full Debug)
 
 on:
   push:
@@ -9,29 +9,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2️⃣ JAR 빌드
+      # 1️⃣ JAR 빌드
       - name: Build JAR
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
+          echo "📦 Build 결과:"
+          ls -al build/libs
 
-      # 3️⃣ EC2로 JAR + Dockerfile만 업로드
+      # 2️⃣ JAR + Dockerfile 업로드
       - name: Upload JAR & Dockerfile to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          source: "build/libs/*.jar,Dockerfile"
+          source: |
+            ./build/libs/*.jar
+            ./Dockerfile
           target: "/home/ec2-user/opale_be"
           overwrite: true
-          rm: false
 
-      # 4️⃣ EC2에서 Docker 이미지 생성 + 실행
+      # 3️⃣ EC2에서 Docker 재배포
       - name: SSH into EC2 and deploy
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -42,20 +44,56 @@ jobs:
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "📦 최신 JAR 적용"
-            mv build/libs/*.jar app.jar || cp *.jar app.jar
+            echo "📂 현재 디렉토리 파일 목록:"
+            ls -al
 
-            echo "🛠 Docker 네트워크 연결 확인..."
+            # ===========================
+            # 1. JAR 자동 감지 및 적용
+            # ===========================
+            echo "🔍 JAR 파일 자동 검색 중..."
+            JAR_FILE=$(ls *.jar 2>/dev/null | head -n 1 || true)
+
+            if [ -z "$JAR_FILE" ]; then
+              echo "❌ JAR 파일을 찾을 수 없습니다. build/libs 업로드 여부를 확인하세요."
+              exit 1
+            fi
+
+            echo "📦 JAR 파일 발견: $JAR_FILE"
+            mv "$JAR_FILE" app.jar
+
+            # ===========================
+            # 2. application.yml 존재 여부 체크
+            # ===========================
+            if [ ! -f /home/ec2-user/resources/application.yml ]; then
+              echo "❌ /home/ec2-user/resources/application.yml 파일이 없습니다!"
+              echo "EC2 서버에 application.yml이 존재하는지 확인하세요."
+              exit 1
+            fi
+            echo "✅ application.yml 확인됨"
+
+            # ===========================
+            # 3. Docker 네트워크 확인
+            # ===========================
+            echo "🛠 Docker 네트워크 연결 확인"
             docker network create opale-net || true
             docker network connect opale-net mysql-opale || true
 
-            echo "🔨 새 이미지 빌드 중..."
+            # ===========================
+            # 4. 이미지 빌드
+            # ===========================
+            echo "🔨 Docker 이미지 빌드 중..."
             docker build -t opale-be .
 
+            # ===========================
+            # 5. 기존 컨테이너 종료/삭제
+            # ===========================
             echo "🧹 기존 컨테이너 종료 및 삭제..."
             docker rm -f opale-be || true
 
-            echo "🚀 새 컨테이너 실행"
+            # ===========================
+            # 6. 새 컨테이너 실행
+            # ===========================
+            echo "🚀 새 컨테이너 실행..."
             docker run -d \
               --name opale-be \
               --network opale-net \
@@ -64,4 +102,15 @@ jobs:
               -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
               opale-be
 
-            echo "🎉 Deployment completed successfully!"
+            echo "🎉 Docker 배포 완료!"
+
+            # ===========================
+            # 7. 컨테이너 상태 및 로그 출력
+            # ===========================
+            echo "🔎 컨테이너 상태 확인:"
+            docker ps -a
+
+            echo "📜 최근 로그 (마지막 200줄):"
+            docker logs --tail=200 opale-be || true
+
+            echo "🎉 Deployment completed successfully with FULL DEBUG!"

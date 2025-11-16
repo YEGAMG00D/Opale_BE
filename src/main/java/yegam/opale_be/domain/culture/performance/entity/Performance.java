@@ -103,9 +103,13 @@ public class Performance {
   @Column(name = "time", length = 255)
   private String time;
 
-  // ✅ 새로 추가된 평점 컬럼
+  /** 평점 */
   @Column(name = "rating")
   private Double rating;
+
+  /** 조회수 */
+  @Column(name = "view_count", nullable = false)
+  private Long viewCount = 0L;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "place_id",

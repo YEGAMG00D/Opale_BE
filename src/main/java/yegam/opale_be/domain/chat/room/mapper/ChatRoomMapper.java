@@ -24,7 +24,7 @@ public class ChatRoomMapper {
         .thumbnailUrl(dto.getThumbnailUrl())
         .isPublic(dto.getIsPublic() != null ? dto.getIsPublic() : true)
         .password(dto.getPassword())
-        .visitCount(0)
+        .visitCount(0L)
         .lastMessage(null)
         .lastMessageTime(null)
         .isActive(false)
