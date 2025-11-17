@@ -1,4 +1,4 @@
-name: Deploy Spring Boot to EC2 with Docker (Fixed)
+name: Deploy Spring Boot to EC2 with Docker Compose
 
 on:
   push:
@@ -9,48 +9,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 0️⃣ 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1️⃣ JAR 빌드 및 파일명 저장 (수정된 부분: ID와 Output을 사용하여 파일명 획득)
-      - name: Build JAR and set filename
-        id: build_jar
+      # 1️⃣ JAR 빌드
+      - name: Build JAR
         run: |
           chmod +x gradlew
           ./gradlew clean build -x test
-          
           echo "📦 Build 결과:"
           ls -al build/libs
-          
-          # 실행 가능한 JAR 파일명 (plain.jar 제외)을 찾습니다.
-          # find의 출력은 "./build/libs/opale_Be-0.0.1-SNAPSHOT.jar" 형태입니다.
-          JAR_PATH=$(find ./build/libs -maxdepth 1 -name "*.jar" ! -name "*-plain.jar" | head -n 1)
-          
-          if [ -z "$JAR_PATH" ]; then
-            echo "::error::Executable JAR file not found in build/libs."
-            exit 1
-          fi
-          
-          # 다음 단계에서 사용할 수 있도록 JAR 파일 경로를 output 변수에 저장
-          echo "jar_file_path=$JAR_PATH" >> $GITHUB_OUTPUT
-          echo "✅ JAR 파일 경로: $JAR_PATH 를 output으로 저장했습니다."
 
-      # 2️⃣ JAR + Dockerfile 업로드 (수정된 부분: 정확한 파일 경로 변수 사용)
-      - name: Upload JAR & Dockerfile to EC2
+      # 2️⃣ JAR 업로드 (build/libs 그대로 보냄)
+      - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
-          # 1단계에서 저장한 정확한 파일 경로와 Dockerfile을 source로 지정
-          source: |
-            ${{ steps.build_jar.outputs.jar_file_path }}
-            ./Dockerfile
+          source: "build/libs/*.jar"
           target: "/home/ec2-user/opale_be"
           overwrite: true
 
-      # 3️⃣ EC2에서 Docker 재배포 (SSH 스크립트는 기존 코드를 유지하되, JAR 파일 찾기 로직이 정상 작동할 것입니다.)
-      - name: SSH into EC2 and deploy
+      # 3️⃣ EC2에서 docker compose로 빌드 + 재시작
+      - name: Deploy on EC2 with Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -60,77 +43,35 @@ jobs:
             set -e
             cd /home/ec2-user/opale_be
 
-            echo "📂 현재 디렉토리 파일 목록:"
+            echo "📂 현재 디렉토리:"
+            pwd
             ls -al
 
-            # ===========================
-            # 1. JAR 자동 감지 및 적용
-            # scp-action으로 전송된 JAR 파일은 opale_be 디렉토리에 직접 복사됩니다.
-            # ===========================
-            echo "🔍 JAR 파일 자동 검색 중..."
-            JAR_FILE=$(ls *.jar 2>/dev/null | head -n 1 || true)
+            echo "📂 build/libs 내용:"
+            ls -al build/libs || echo "⚠ build/libs 없음"
+
+            echo "🔍 최신 JAR 찾기 (plain 제외)"
+            JAR_FILE=$(find build/libs -maxdepth 1 -name "*.jar" ! -name "*-plain.jar" | head -n 1)
 
             if [ -z "$JAR_FILE" ]; then
-              echo "❌ JAR 파일을 찾을 수 없습니다. (업로드 실패 가능성)"
+              echo "❌ JAR 파일이 없습니다. (build/libs 확인 필요)"
               exit 1
             fi
 
-            echo "📦 JAR 파일 발견: $JAR_FILE"
-            # Dockerfile에서 app.jar을 사용하고 있다고 가정하고 이름 변경
-            mv "$JAR_FILE" app.jar
+            echo "📦 JAR 파일 발견: $JAR_FILE → app.jar로 복사"
+            cp "$JAR_FILE" app.jar
 
-            # ===========================
-            # 2. application.yml 존재 여부 체크
-            # ===========================
             if [ ! -f /home/ec2-user/resources/application.yml ]; then
-              echo "❌ /home/ec2-user/resources/application.yml 파일이 없습니다!"
-              echo "EC2 서버에 application.yml이 존재하는지 확인하세요."
+              echo "❌ /home/ec2-user/resources/application.yml 이 없습니다."
               exit 1
             fi
-            echo "✅ application.yml 확인됨"
+            echo "✅ application.yml 존재 확인됨"
 
-            # ===========================
-            # 3. Docker 네트워크 확인 (mysql-opale 컨테이너와 연결)
-            # ===========================
-            echo "🛠 Docker 네트워크 연결 확인"
-            # 이미 있으면 무시 (|| true)
-            docker network create opale-net || true 
-            docker network connect opale-net mysql-opale || true
+            echo "🚀 docker compose up -d --build 실행"
+            docker compose up -d --build
 
-            # ===========================
-            # 4. 이미지 빌드
-            # ===========================
-            echo "🔨 Docker 이미지 빌드 중..."
-            # app.jar을 사용해 이미지 빌드
-            docker build -t opale-be .
-
-            # ===========================
-            # 5. 기존 컨테이너 종료/삭제
-            # ===========================
-            echo "🧹 기존 컨테이너 종료 및 삭제..."
-            docker rm -f opale-be || true
-
-            # ===========================
-            # 6. 새 컨테이너 실행
-            # ===========================
-            echo "🚀 새 컨테이너 실행..."
-            docker run -d \
-              --name opale-be \
-              --network opale-net \
-              -p 8080:8080 \
-              -v /home/ec2-user/resources/application.yml:/app/application.yml \
-              -e SPRING_CONFIG_LOCATION=file:/app/application.yml \
-              opale-be
-
-            echo "🎉 Docker 배포 시작 완료!"
-
-            # ===========================
-            # 7. 컨테이너 상태 및 로그 출력
-            # ===========================
-            echo "🔎 컨테이너 상태 확인:"
+            echo "🔎 컨테이너 상태:"
             docker ps -a
 
-            echo "📜 최근 로그 (마지막 200줄):"
-            docker logs --tail=200 opale-be || true
-
-            echo "🎉 Deployment completed successfully with FULL DEBUG!"
+            echo "📜 opale-be 최근 로그:"
+            docker logs opale-be --tail=200 || true
