@@ -6,8 +6,8 @@ services:
     container_name: mysql-opale
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: "1234"
+      MYSQL_DATABASE: "opale_db"
     networks:
       - opale-net
     volumes:
@@ -16,7 +16,9 @@ services:
       - "3306:3306"
 
   opale-be:
-    image: opale-be
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: opale-be
     restart: always
     depends_on:
