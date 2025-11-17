@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 0️⃣ 코드 체크아웃
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -21,7 +20,7 @@ jobs:
           echo "📦 Build 결과:"
           ls -al build/libs
 
-      # 2️⃣ JAR 업로드 (build/libs 그대로 보냄)
+      # 2️⃣ JAR 업로드
       - name: Upload JAR to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -32,7 +31,7 @@ jobs:
           target: "/home/ec2-user/opale_be"
           overwrite: true
 
-      # 3️⃣ EC2에서 docker compose로 빌드 + 재시작
+      # 3️⃣ EC2에서 docker-compose up 실행
       - name: Deploy on EC2 with Docker Compose
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -67,8 +66,8 @@ jobs:
             fi
             echo "✅ application.yml 존재 확인됨"
 
-            echo "🚀 docker compose up -d --build 실행"
-            docker compose up -d --build
+            echo "🚀 docker-compose up -d --build 실행"
+            docker-compose up -d --build
 
             echo "🔎 컨테이너 상태:"
             docker ps -a
