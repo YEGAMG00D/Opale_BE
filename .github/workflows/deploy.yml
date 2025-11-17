@@ -42,6 +42,13 @@ jobs:
             set -e
             cd /home/ec2-user/opale_be
 
+            # 🔥 기존 컨테이너 삭제
+            echo "🧹 기존 컨테이너 정리"
+            docker stop opale-be || true
+            docker rm opale-be || true
+            docker stop mysql-opale || true
+            docker rm mysql-opale || true
+
             echo "📂 현재 디렉토리:"
             pwd
             ls -al
