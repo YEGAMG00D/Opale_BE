@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import yegam.opale_be.domain.reservation.dto.request.*;
 import yegam.opale_be.domain.reservation.dto.response.*;
 import yegam.opale_be.domain.reservation.service.ReservationService;
@@ -25,6 +26,21 @@ import yegam.opale_be.global.response.BaseResponse;
 public class ReservationController {
 
   private final ReservationService reservationService;
+
+  /** 티켓 이미지 OCR */
+  @Operation(summary = "티켓 이미지 OCR", description = "티켓 이미지에서 텍스트 정보를 OCR로 추출합니다.")
+  @PostMapping(value = "/ocr", consumes = "multipart/form-data")
+  public ResponseEntity<BaseResponse<TicketOcrResponseDto>> extractTicketInfo(
+      @AuthenticationPrincipal Long userId,
+      @RequestPart("file") MultipartFile file
+  ) {
+    if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
+
+    TicketOcrResponseDto response = reservationService.extractTicketInfoByOcr(file);
+
+    return ResponseEntity.ok(BaseResponse.success("OCR 추출 성공", response));
+  }
+
 
   /** 티켓 등록 */
   @Operation(summary = "티켓 인증 등록", description = "사용자가 직접 입력한 예매 정보를 등록합니다.")

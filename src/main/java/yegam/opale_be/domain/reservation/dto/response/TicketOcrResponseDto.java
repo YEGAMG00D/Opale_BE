@@ -6,18 +6,16 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * 티켓 인증 목록의 단건 요약 응답 DTO
+ * 티켓 이미지 OCR 결과 응답 DTO
+ * - 티켓 이미지에서 추출된 예매 정보 자동 채우기용
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Schema(title = "TicketSimpleResponse DTO", description = "티켓 인증 단건 요약 응답 DTO")
-public class TicketSimpleResponseDto {
-
-  @Schema(description = "티켓 ID", example = "101")
-  private Long ticketId;
+@Schema(title = "TicketOcrResponse DTO", description = "티켓 이미지 OCR 결과 응답 DTO")
+public class TicketOcrResponseDto {
 
   @Schema(description = "예매 번호", example = "A123456789")
   private String ticketNumber;
@@ -25,7 +23,7 @@ public class TicketSimpleResponseDto {
   @Schema(description = "공연명", example = "뮤지컬 위키드 내한공연")
   private String performanceName;
 
-  @Schema(description = "공연 관람 날짜", example = "2025-10-23T19:00:00")
+  @Schema(description = "공연 관람 날짜 및 시간 (LocalDateTime 형식)", example = "2025-10-23T19:00:00")
   private LocalDateTime performanceDate;
 
   @Schema(description = "좌석 정보", example = "나 구역 15열 23번")

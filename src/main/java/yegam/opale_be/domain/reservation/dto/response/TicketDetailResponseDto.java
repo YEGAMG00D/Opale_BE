@@ -51,4 +51,7 @@ public class TicketDetailResponseDto {
 
   @Schema(description = "마지막 수정 시각", example = "2025-10-21T11:00:00")
   private LocalDateTime updatedAt;
+
+  @Schema(description = "인증 방식 (OCR / MANUAL / ADMIN)", example = "OCR")
+  private String source;
 }

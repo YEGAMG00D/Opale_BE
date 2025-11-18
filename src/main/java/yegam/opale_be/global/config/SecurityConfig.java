@@ -38,6 +38,13 @@ public class SecurityConfig {
         .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
+            // 1) OPTIONS 허용 → multipart preflight 문제 해결
+            .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+            // 2) OCR 엔드포인트 허용 → Swagger/Postman 테스트 가능
+            .requestMatchers(HttpMethod.POST, "/api/reservations/ocr").permitAll()
+
+
             // Swagger, 공개 엔드포인트
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(

@@ -1,11 +1,13 @@
 package yegam.opale_be.domain.reservation.service;
 
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.domain.place.entity.Place;
@@ -35,6 +37,39 @@ public class ReservationService {
   private final PerformanceRepository performanceRepository;
   private final PlaceRepository placeRepository;
   private final ReservationMapper reservationMapper;
+
+  private final OcrService ocrService;
+
+
+
+  /** 티켓 이미지 OCR → 텍스트 추출 */
+  public TicketOcrResponseDto extractTicketInfoByOcr(MultipartFile file) {
+
+    // 1) OCR 전용 서비스 호출 (GPT Vision)
+    Map<String, String> result = ocrService.extractFromImage(file);
+
+    // 2) 날짜 파싱
+    LocalDateTime performanceDate = null;
+    try {
+      if (result.get("performanceDate") != null) {
+        performanceDate = LocalDateTime.parse(result.get("performanceDate"));
+      }
+    } catch (Exception e) {
+      log.warn("❌ OCR 날짜 파싱 실패: {}", result.get("performanceDate"));
+    }
+
+    // 3) DTO 변환 후 리턴
+    return TicketOcrResponseDto.builder()
+        .ticketNumber(result.get("ticketNumber"))
+        .performanceName(result.get("performanceName"))
+        .performanceDate(performanceDate)
+        .seatInfo(result.get("seatInfo"))
+        .placeName(result.get("placeName"))
+        .build();
+  }
+
+
+
 
   /** ✅ 티켓 등록 */
   public TicketDetailResponseDto createTicket(Long userId, TicketCreateRequestDto dto) {
