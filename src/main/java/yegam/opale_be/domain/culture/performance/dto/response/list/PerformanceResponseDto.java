@@ -35,6 +35,9 @@ public class PerformanceResponseDto {
   @Schema(description = "평점(리뷰 합산)", example = "4.6")
   private Double rating; // 현재는 null 또는 0.0로 대응
 
+  @Schema(description = "리뷰 개수", example = "24")
+  private Long reviewCount;
+
   @Schema(description = "키워드 목록", example = "[\"휴먼드라마\",\"대서사\"]")
   private List<String> keywords;
 

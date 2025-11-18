@@ -65,4 +65,34 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
         AND r.rating IS NOT NULL
   """)
   Double calculateAverageRating(@Param("placeId") String placeId);
+
+  /** 공연장 리뷰 개수 (특정 타입만) */
+  @Query("""
+      SELECT COUNT(r)
+      FROM PlaceReview r
+      WHERE r.place.placeId = :placeId
+        AND r.reviewType = :reviewType
+        AND r.isDeleted = false
+  """)
+  Long countByPlaceIdAndType(
+      @Param("placeId") String placeId,
+      @Param("reviewType") ReviewType reviewType
+  );
+
+  /** 공연장 평균 평점 (특정 타입만) */
+  @Query("""
+      SELECT AVG(r.rating)
+      FROM PlaceReview r
+      WHERE r.place.placeId = :placeId
+        AND r.reviewType = :reviewType
+        AND r.isDeleted = false
+        AND r.rating IS NOT NULL
+  """)
+  Double avgRatingByPlaceIdAndType(
+      @Param("placeId") String placeId,
+      @Param("reviewType") ReviewType reviewType
+  );
+
+
+
 }

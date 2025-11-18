@@ -44,4 +44,11 @@ public class PlaceBasicResponseDto {
 
   @Schema(description = "관련 URL", example = "https://www.sejongpac.or.kr/")
   private String relateurl;
+
+  // ⭐ 추가됨
+  @Schema(description = "공연장 평균 평점", example = "4.7")
+  private Double rating;
+
+  @Schema(description = "리뷰 개수", example = "15")
+  private Long reviewCount;
 }
