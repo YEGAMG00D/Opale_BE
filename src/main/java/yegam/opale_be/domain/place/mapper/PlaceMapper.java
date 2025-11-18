@@ -7,6 +7,8 @@ import yegam.opale_be.domain.place.dto.response.detail.*;
 import yegam.opale_be.domain.place.dto.response.list.*;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.entity.PlaceStage;
+import yegam.opale_be.domain.review.common.ReviewType;
+import yegam.opale_be.domain.review.place.repository.PlaceReviewRepository;
 import yegam.opale_be.global.common.BasePlaceListResponseDto;
 
 import java.math.BigDecimal;
@@ -16,10 +18,15 @@ import java.util.stream.Collectors;
 @Component
 public class PlaceMapper {
 
-  /** 페이지 변환 */
-  public PlaceListResponseDto toPagedPlaceListDto(Page<Place> placePage) {
+  // -----------------------------------------------------------
+  // 📌 페이지네이션 + 리뷰 통계 포함
+  // -----------------------------------------------------------
+  public PlaceListResponseDto toPagedPlaceListDtoWithStats(
+      Page<Place> placePage,
+      PlaceReviewRepository reviewRepo
+  ) {
     List<PlaceSummaryResponseDto> list = placePage.getContent().stream()
-        .map(this::toPlaceSummaryDto)
+        .map(place -> injectSummaryStats(place, reviewRepo))
         .collect(Collectors.toList());
 
     return PlaceListResponseDto.builder()
@@ -33,10 +40,15 @@ public class PlaceMapper {
         .build();
   }
 
-  /** 전체 리스트 변환 */
-  public PlaceListResponseDto toPlaceListDto(List<Place> places) {
+  // -----------------------------------------------------------
+  // 📌 일반 리스트 + 리뷰 통계 포함
+  // -----------------------------------------------------------
+  public PlaceListResponseDto toPlaceListDtoWithStats(
+      List<Place> places,
+      PlaceReviewRepository reviewRepo
+  ) {
     List<PlaceSummaryResponseDto> list = places.stream()
-        .map(this::toPlaceSummaryDto)
+        .map(place -> injectSummaryStats(place, reviewRepo))
         .collect(Collectors.toList());
 
     return PlaceListResponseDto.builder()
@@ -50,38 +62,65 @@ public class PlaceMapper {
         .build();
   }
 
-  /** 공연장 요약 DTO */
-  public PlaceSummaryResponseDto toPlaceSummaryDto(Place p) {
+  // -----------------------------------------------------------
+  // 📌 요약 DTO + 리뷰 통계 주입 함수 (중복 제거)
+  // -----------------------------------------------------------
+  private PlaceSummaryResponseDto injectSummaryStats(
+      Place place,
+      PlaceReviewRepository reviewRepo
+  ) {
+    Long reviewCount =
+        reviewRepo.countByPlaceIdAndType(place.getPlaceId(), ReviewType.PLACE);
+
+    Double rating =
+        reviewRepo.calculateAverageRating(place.getPlaceId());
+
     return PlaceSummaryResponseDto.builder()
-        .placeId(p.getPlaceId())
-        .name(p.getName())
-        .address(p.getAddress())
-        .telno(p.getTelno())
-        .stageCount(p.getStageCount())
-        .latitude(p.getLa())
-        .longitude(p.getLo())
-        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
+        .placeId(place.getPlaceId())
+        .name(place.getName())
+        .address(place.getAddress())
+        .telno(place.getTelno())
+        .stageCount(place.getStageCount())
+        .latitude(place.getLa())
+        .longitude(place.getLo())
+        .rating(rating != null ? rating : 0.0)
+        .reviewCount(reviewCount != null ? reviewCount : 0L)
         .build();
   }
 
-  /** 공연장 기본 정보 DTO */
-  public PlaceBasicResponseDto toPlaceBasicDto(Place p) {
+  // -----------------------------------------------------------
+  // 📌 공연장 기본 정보 DTO + 리뷰 통계 포함
+  // -----------------------------------------------------------
+  public PlaceBasicResponseDto toPlaceBasicDtoWithStats(
+      Place place,
+      PlaceReviewRepository reviewRepo
+  ) {
+    Long reviewCount =
+        reviewRepo.countByPlaceIdAndType(place.getPlaceId(), ReviewType.PLACE);
+
+    Double rating =
+        reviewRepo.calculateAverageRating(place.getPlaceId());
+
     return PlaceBasicResponseDto.builder()
-        .placeId(p.getPlaceId())
-        .name(p.getName())
-        .address(p.getAddress())
-        .telno(p.getTelno())
-        .fcltychartr(p.getFcltychartr())
-        .opende(p.getOpende())
-        .seatscale(p.getSeatscale())
-        .relateurl(p.getRelateurl())
-        .stageCount(p.getStageCount())
-        .la(p.getLa())
-        .lo(p.getLo())
+        .placeId(place.getPlaceId())
+        .name(place.getName())
+        .address(place.getAddress())
+        .telno(place.getTelno())
+        .fcltychartr(place.getFcltychartr())
+        .opende(place.getOpende())
+        .seatscale(place.getSeatscale())
+        .relateurl(place.getRelateurl())
+        .stageCount(place.getStageCount())
+        .la(place.getLa())
+        .lo(place.getLo())
+        .rating(rating != null ? rating : 0.0)
+        .reviewCount(reviewCount != null ? reviewCount : 0L)
         .build();
   }
 
-  /** 공연장 편의시설 DTO */
+  // -----------------------------------------------------------
+  // 📌 공연장 편의시설 DTO — 수정하면 안되는 부분
+  // -----------------------------------------------------------
   public PlaceFacilityResponseDto toPlaceFacilityDto(Place p) {
     return PlaceFacilityResponseDto.builder()
         .restaurant(p.getRestaurant())
@@ -97,7 +136,9 @@ public class PlaceMapper {
         .build();
   }
 
-  /** 공연관 DTO */
+  // -----------------------------------------------------------
+  // 📌 공연관 DTO
+  // -----------------------------------------------------------
   public PlaceStageResponseDto toPlaceStageDto(PlaceStage s) {
     return PlaceStageResponseDto.builder()
         .stageId(s.getStageId())
@@ -112,7 +153,9 @@ public class PlaceMapper {
         .build();
   }
 
-  /** 공연장별 공연 DTO */
+  // -----------------------------------------------------------
+  // 📌 공연장별 공연 DTO
+  // -----------------------------------------------------------
   public PlacePerformanceResponseDto toPlacePerformanceDto(Performance p) {
     return PlacePerformanceResponseDto.builder()
         .performanceId(p.getPerformanceId())
@@ -127,7 +170,9 @@ public class PlaceMapper {
         .build();
   }
 
-  /** 공통 리스트 Response 변환 (공연관/공연 등) */
+  // -----------------------------------------------------------
+  // 📌 공통 리스트 Response 변환
+  // -----------------------------------------------------------
   public <T> BasePlaceListResponseDto<T> toBasePlaceListResponse(Place p, List<T> items) {
     return BasePlaceListResponseDto.<T>builder()
         .placeId(p.getPlaceId())
@@ -138,12 +183,9 @@ public class PlaceMapper {
         .build();
   }
 
-  private List<String> splitKeywords(String keywords) {
-    if (keywords == null || keywords.isBlank()) return List.of();
-    return List.of(keywords.split(","));
-  }
-
-  /** 좌표 기반 공연장 목록 변환 */
+  // -----------------------------------------------------------
+  // 📌 근처 공연장 목록
+  // -----------------------------------------------------------
   public PlaceNearbyListResponseDto toNearbyListDto(
       List<Object[]> rows,
       BigDecimal latitude,
@@ -159,6 +201,8 @@ public class PlaceMapper {
             .latitude((BigDecimal) r[3])
             .longitude((BigDecimal) r[4])
             .distance(((Number) r[5]).doubleValue())
+            .rating(0.0)       // 기본값 (필요하면 서비스에서 주입)
+            .reviewCount(0L)   // 기본값
             .build())
         .collect(Collectors.toList());
 
@@ -173,5 +217,10 @@ public class PlaceMapper {
         .searchRadius(radius)
         .places(places)
         .build();
+  }
+
+  private List<String> splitKeywords(String keywords) {
+    if (keywords == null || keywords.isBlank()) return List.of();
+    return List.of(keywords.split(","));
   }
 }

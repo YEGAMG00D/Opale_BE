@@ -1,8 +1,8 @@
 package yegam.opale_be.domain.place.dto.response.list;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.math.BigDecimal;
 import lombok.*;
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -33,7 +33,10 @@ public class PlaceSummaryResponseDto {
   @Schema(description = "공연관 수", example = "8")
   private Integer stageCount;
 
-  // ✅ 추가됨
+  // ⭐ 추가됨
   @Schema(description = "공연장 평균 평점", example = "4.7")
   private Double rating;
+
+  @Schema(description = "리뷰 개수", example = "32")
+  private Long reviewCount;
 }

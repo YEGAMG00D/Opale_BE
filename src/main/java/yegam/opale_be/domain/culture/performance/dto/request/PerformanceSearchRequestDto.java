@@ -26,7 +26,7 @@ public class PerformanceSearchRequestDto {
   @Schema(description = "지역 필터", example = "서울특별시")
   private String area;
 
-  @Schema(description = "페이지 번호 (무한스크롤 또는 페이지네이션)", example = "0")
+  @Schema(description = "페이지 번호 (무한스크롤 또는 페이지네이션)", example = "1")
   private Integer page;
 
   @Schema(description = "페이지당 항목 수", example = "20")
