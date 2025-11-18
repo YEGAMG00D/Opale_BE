@@ -65,4 +65,22 @@ public interface PerformanceReviewRepository extends JpaRepository<PerformanceRe
         AND r.rating IS NOT NULL
   """)
   Double calculateAverageRating(@Param("performanceId") String performanceId);
+
+
+  /** 리뷰 개수 구하기 */
+  @Query("""
+    SELECT COUNT(r)
+    FROM PerformanceReview r
+    WHERE r.performance.performanceId = :performanceId
+      AND r.reviewType = :type
+      AND r.isDeleted = false
+""")
+  Long countByPerformanceIdAndType(String performanceId, ReviewType type);
+
+
+
 }
+
+
+
+

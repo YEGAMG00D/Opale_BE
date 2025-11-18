@@ -5,6 +5,8 @@ import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.culture.performance.dto.response.detail.*;
 import yegam.opale_be.domain.culture.performance.dto.response.list.*;
 import yegam.opale_be.domain.culture.performance.entity.*;
+import yegam.opale_be.domain.review.common.ReviewType;
+import yegam.opale_be.domain.review.performance.repository.PerformanceReviewRepository;
 import yegam.opale_be.global.common.BasePerformanceListResponseDto;
 
 import java.util.*;
@@ -13,11 +15,26 @@ import java.util.stream.Collectors;
 @Component
 public class PerformanceMapper {
 
-  /** 공연 목록 변환 */
-  public PerformanceListResponseDto toPagedPerformanceListDto(Page<Performance> performancePage) {
+  /** -------------------------------------------
+   *  공연 목록 변환 + reviewCount 포함
+   * ------------------------------------------- */
+  public PerformanceListResponseDto toPagedPerformanceListDtoWithReviewCount(
+      Page<Performance> performancePage,
+      PerformanceReviewRepository reviewRepo
+  ) {
+
     List<PerformanceResponseDto> dtoList = performancePage.getContent().stream()
-        .map(this::toPerformanceResponseDto)
-        .collect(Collectors.toList());
+        .map(p -> {
+          PerformanceResponseDto dto = toPerformanceResponseDto(p);
+
+          Long reviewCount = reviewRepo.countByPerformanceIdAndType(
+              p.getPerformanceId(), ReviewType.AFTER
+          );
+
+          dto.setReviewCount(reviewCount);
+          return dto;
+        })
+        .toList();
 
     return PerformanceListResponseDto.builder()
         .totalCount(performancePage.getTotalElements())
@@ -30,13 +47,35 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** BaseListResponseDto 공통 변환 */
-  public <T> BasePerformanceListResponseDto<T> toBaseListResponse(Performance performance, List<T> list) {
-    return BasePerformanceListResponseDto.<T>builder()
-        .performanceId(performance.getPerformanceId())
-        .title(performance.getTitle())
-        .totalCount(list.size())
-        .items(list)
+  /** -------------------------------------------
+   *  공연 목록 변환 (리스트 기반) + reviewCount 포함
+   * ------------------------------------------- */
+  public PerformanceListResponseDto toPerformanceListDtoWithReviewCount(
+      List<Performance> performances,
+      PerformanceReviewRepository reviewRepo
+  ) {
+
+    List<PerformanceResponseDto> dtoList = performances.stream()
+        .map(p -> {
+          PerformanceResponseDto dto = toPerformanceResponseDto(p);
+
+          Long reviewCount = reviewRepo.countByPerformanceIdAndType(
+              p.getPerformanceId(), ReviewType.AFTER
+          );
+
+          dto.setReviewCount(reviewCount);
+          return dto;
+        })
+        .toList();
+
+    return PerformanceListResponseDto.builder()
+        .totalCount(dtoList.size())
+        .currentPage(1)
+        .pageSize(dtoList.size())
+        .totalPages(1)
+        .hasNext(false)
+        .hasPrev(false)
+        .performances(dtoList)
         .build();
   }
 
@@ -51,25 +90,21 @@ public class PerformanceMapper {
         .placeName(p.getPlaceName())
         .startDate(p.getStartDate() != null ? p.getStartDate().toLocalDate() : null)
         .endDate(p.getEndDate() != null ? p.getEndDate().toLocalDate() : null)
-        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
+        .rating(p.getRating() != null ? p.getRating() : 0.0)
         .keywords(splitKeywords(p.getAiKeywords()))
         .aiSummary(p.getAiSummary())
         .build();
   }
 
-  /** 리스트 전용 변환 */
-  public PerformanceListResponseDto toPerformanceListDto(List<Performance> performances) {
-    List<PerformanceResponseDto> dtoList = performances.stream()
-        .map(this::toPerformanceResponseDto)
-        .collect(Collectors.toList());
-    return PerformanceListResponseDto.builder()
-        .totalCount(dtoList.size())
-        .performances(dtoList)
-        .currentPage(1)
-        .pageSize(dtoList.size())
-        .totalPages(1)
-        .hasNext(false)
-        .hasPrev(false)
+  /** BaseListResponseDto 공통 변환 */
+  public <T> BasePerformanceListResponseDto<T> toBaseListResponse(
+      Performance performance, List<T> list
+  ) {
+    return BasePerformanceListResponseDto.<T>builder()
+        .performanceId(performance.getPerformanceId())
+        .title(performance.getTitle())
+        .totalCount(list.size())
+        .items(list)
         .build();
   }
 
@@ -80,11 +115,12 @@ public class PerformanceMapper {
         .title(p.getTitle())
         .genrenm(p.getGenrenm())
         .poster(p.getPoster())
+        .placeId(p.getPlace().getPlaceId())
         .placeName(p.getPlaceName())
         .placeAddress(p.getPlace() != null ? p.getPlace().getAddress() : null)
         .startDate(p.getStartDate() != null ? p.getStartDate().toLocalDate() : null)
         .endDate(p.getEndDate() != null ? p.getEndDate().toLocalDate() : null)
-        .rating(p.getRating() != null ? p.getRating() : 0.0) // ✅ 수정됨
+        .rating(p.getRating() != null ? p.getRating() : 0.0)
         .keywords(splitKeywords(p.getAiKeywords()))
         .aiSummary(p.getAiSummary())
         .prfruntime(p.getPrfruntime())
@@ -94,7 +130,7 @@ public class PerformanceMapper {
         .build();
   }
 
-  /** 공연 예매 정보 묶음 */
+  /** 공연 예매 정보 변환 */
   public PerformanceDetailResponseDto toPerformanceDetailDto(
       Performance p,
       List<PerformanceImage> images,

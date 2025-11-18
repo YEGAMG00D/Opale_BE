@@ -25,6 +25,9 @@ public class PerformanceBasicResponseDto {
   @Schema(description = "공연 포스터 URL")
   private String poster;
 
+  @Schema(description = "공연장 ID", example = "FC12345")
+  private String placeId;
+
   @Schema(description = "공연장명", example = "블루스퀘어 신한카드홀")
   private String placeName;
 
@@ -39,6 +42,9 @@ public class PerformanceBasicResponseDto {
 
   @Schema(description = "평점(리뷰 합산)", example = "4.6")
   private Double rating; // 현재는 null/0.0 대응
+
+  @Schema(description = "리뷰 개수", example = "24")
+  private Long reviewCount;
 
   @Schema(description = "키워드 목록", example = "[\"휴먼드라마\",\"대서사\"]")
   private List<String> keywords;
