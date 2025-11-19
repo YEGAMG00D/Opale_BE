@@ -14,21 +14,30 @@ import java.util.Optional;
 @Repository
 public interface PlaceRepository extends JpaRepository<Place, String> {
 
-  /** ⭐ 공연장 조회수 증가 */
+  /** 공연장 조회수 증가 */
   @Modifying
   @Transactional
   @Query("UPDATE Place p SET p.viewCount = p.viewCount + 1 WHERE p.placeId = :placeId")
   void incrementViewCount(@Param("placeId") String placeId);
 
-  /** 공연장 검색 */
+  /**
+   * 공연장 검색
+   * - keyword: 공연장 이름 검색 (부분 일치, 대소문자 무시)
+   * - areas: DB에 저장된 area 값 리스트 (서울특별시, 경기도, 부산광역시 등)
+   *          null이면 지역 필터 없이 전체 검색
+   */
   @Query("""
       SELECT p FROM Place p
       WHERE (:keyword IS NULL OR LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')))
-        AND (:area IS NULL OR LOWER(p.address) LIKE LOWER(CONCAT('%', :area, '%')))
+        AND (:areas IS NULL OR p.area IN :areas)
       """)
-  Page<Place> search(@Param("keyword") String keyword, @Param("area") String area, Pageable pageable);
+  Page<Place> search(
+      @Param("keyword") String keyword,
+      @Param("areas") List<String> areas,
+      Pageable pageable
+  );
 
-  /** ⭐ 인기 공연장 (조회수 + 평점 + 공연장 이름) */
+  /** 인기 공연장 (조회수 + 평점 + 공연장 이름) */
   @Query("""
       SELECT p FROM Place p
       ORDER BY p.viewCount DESC, p.rating DESC NULLS LAST, p.name ASC
