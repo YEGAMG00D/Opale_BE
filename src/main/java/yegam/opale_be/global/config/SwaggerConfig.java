@@ -37,7 +37,7 @@ public class SwaggerConfig {
             .title("Opale - 백엔드 API 명세서")
             .version("1.0")
             .description("""
-                ⚪ 공연 정보 공유 플랫폼: 회원 인증 관련 API
+                ⚪ 공연 정보 공유 플랫폼: API 목록
                 
                  ■ Authorization 가이드
                 - 로그인 후 발급받은 AccessToken을 전역 Authorize 창에 입력하세요.
