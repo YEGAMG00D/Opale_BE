@@ -61,7 +61,7 @@ public class PerformanceReviewController {
       @PathVariable Long userId,
       @RequestParam(required = false) ReviewType reviewType
   ) {
-    PerformanceReviewListResponseDto response = reviewService.getReviewsByUserPublic(userId, reviewType);
+    PerformanceReviewListResponseDto response = reviewService.getReviewsByUser(userId, reviewType);
     return ResponseEntity.ok(BaseResponse.success("회원 공연 리뷰 목록 조회 성공", response));
   }
 

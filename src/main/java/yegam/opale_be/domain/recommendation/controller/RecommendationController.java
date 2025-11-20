@@ -2,6 +2,7 @@ package yegam.opale_be.domain.recommendation.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -145,6 +146,43 @@ public class RecommendationController {
     return ResponseEntity.ok(BaseResponse.success("인기 채팅방 추천 조회 성공", response));
   }
 
+
+
+  /* ---------------------------------------------------------
+   9) 최근 본 공연 1개 조회
+   --------------------------------------------------------- */
+  @Operation(summary = "최근 본 공연 조회", description = "사용자가 최근 조회한 공연 ID를 반환합니다.")
+  @GetMapping("/recent")
+  public ResponseEntity<BaseResponse<Map<String, String>>> getRecentViewedPerformance(
+      @AuthenticationPrincipal Long userId
+  ) {
+    if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
+
+    String performanceId = recommendationService.getRecentViewedPerformance(userId);
+
+    Map<String, String> result = Map.of("recentPerformanceId", performanceId);
+
+    return ResponseEntity.ok(BaseResponse.success("최근 본 공연 조회 성공", result));
+  }
+
+  /* ---------------------------------------------------------
+     10) 최근 본 공연 → 유사 공연 추천
+     --------------------------------------------------------- */
+  @Operation(summary = "최근 본 공연 기반 추천",
+      description = "사용자가 최근에 본 공연을 기준으로 유사한 공연을 추천합니다.")
+  @GetMapping("/recent/similar")
+  public ResponseEntity<BaseResponse<RecommendationPerformanceListResponseDto>> getRecentSimilarRecommendations(
+      @AuthenticationPrincipal Long userId,
+      @RequestParam(required = false) Integer size,
+      @RequestParam(required = false) String sort
+  ) {
+    if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
+
+    RecommendationPerformanceListResponseDto response =
+        recommendationService.getRecentSimilarRecommendations(userId, size, sort);
+
+    return ResponseEntity.ok(BaseResponse.success("최근 기반 추천 조회 성공", response));
+  }
 
 
 }

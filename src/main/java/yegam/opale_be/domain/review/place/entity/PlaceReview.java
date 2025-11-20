@@ -5,6 +5,7 @@ package yegam.opale_be.domain.review.place.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import yegam.opale_be.domain.place.entity.Place;
+import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
 import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.global.common.BaseTimeEntity;
@@ -55,4 +56,10 @@ public class PlaceReview extends BaseTimeEntity {
   @JoinColumn(name = "place_id", nullable = false,
       foreignKey = @ForeignKey(name = "fk_place_review_place"))
   private Place place;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "ticket_id", nullable = false,
+      foreignKey = @ForeignKey(name = "fk_place_review_ticket"))
+  private UserTicketVerification ticket;
+
 }

@@ -11,7 +11,8 @@ public enum PlaceReviewErrorCode implements BaseErrorCode {
 
   REVIEW_NOT_FOUND("PLACE_REVIEW_4001", "해당 공연장 리뷰를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   REVIEW_ACCESS_DENIED("PLACE_REVIEW_4002", "이 리뷰에 접근할 권한이 없습니다.", HttpStatus.FORBIDDEN),
-  PLACE_NOT_FOUND("PLACE_REVIEW_4003", "해당 공연장을 찾을 수 없습니다.", HttpStatus.NOT_FOUND);
+  PLACE_NOT_FOUND("PLACE_REVIEW_4003", "해당 공연장을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  TICKET_REQUIRED("PLACE_REVIEW_4004", "해당 공연장의 예매 내역이 있어야 리뷰 작성이 가능합니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

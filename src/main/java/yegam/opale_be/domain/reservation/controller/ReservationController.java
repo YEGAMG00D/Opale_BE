@@ -103,4 +103,20 @@ public class ReservationController {
     TicketSimpleListResponseDto response = reservationService.getTicketList(userId, page, size);
     return ResponseEntity.ok(BaseResponse.success("티켓 인증 목록 조회 성공", response));
   }
+
+  @Operation(summary = "티켓 기반 리뷰 조회", description = "티켓 ID로 공연 리뷰 + 공연장 리뷰를 조회합니다.")
+  @GetMapping("/{ticketId}/reviews")
+  public ResponseEntity<BaseResponse<TicketReviewBundleResponseDto>> getTicketReviews(
+      @AuthenticationPrincipal Long userId,
+      @PathVariable Long ticketId
+  ) {
+    if (userId == null) throw new CustomException(GlobalErrorCode.UNAUTHORIZED);
+
+    TicketReviewBundleResponseDto response = reservationService.getTicketReviews(userId, ticketId);
+
+    return ResponseEntity.ok(BaseResponse.success("티켓 리뷰 조회 성공", response));
+  }
+
+
+
 }
