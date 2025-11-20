@@ -17,8 +17,6 @@ import java.time.LocalDateTime;
 @Schema(title = "TicketOcrResponse DTO", description = "티켓 이미지 OCR 결과 응답 DTO")
 public class TicketOcrResponseDto {
 
-  @Schema(description = "예매 번호", example = "A123456789")
-  private String ticketNumber;
 
   @Schema(description = "공연명", example = "뮤지컬 위키드 내한공연")
   private String performanceName;

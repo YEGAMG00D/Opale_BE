@@ -29,7 +29,6 @@ public class ReservationMapper {
       Place place
   ) {
     return UserTicketVerification.builder()
-        .ticketNumber(dto.getTicketNumber())
         .performanceName(dto.getPerformanceName())
         .placeName(dto.getPlaceName())
         .performance(performance)   // null 가능
@@ -49,7 +48,6 @@ public class ReservationMapper {
   public TicketDetailResponseDto toDetailResponseDto(UserTicketVerification entity) {
     return TicketDetailResponseDto.builder()
         .ticketId(entity.getTicketId())
-        .ticketNumber(entity.getTicketNumber())
         .performanceName(entity.getPerformanceName())
         .performanceId(
             entity.getPerformance() != null
@@ -76,7 +74,6 @@ public class ReservationMapper {
   public TicketSimpleResponseDto toSimpleResponseDto(UserTicketVerification entity) {
     return TicketSimpleResponseDto.builder()
         .ticketId(entity.getTicketId())
-        .ticketNumber(entity.getTicketNumber())    // ⭐ 누락되었던 부분 추가됨!
         .performanceName(entity.getPerformanceName())
         .performanceDate(entity.getPerformanceDate())
         .seatInfo(entity.getSeatInfo())

@@ -35,8 +35,10 @@ public class UserService {
   // ---------------------------------------------------------------------
   // 회원가입
   // ---------------------------------------------------------------------
+  @Transactional
   public UserResponseDto signUp(UserSignUpRequestDto dto) {
 
+    // 중복 체크
     if (userRepository.existsByEmail(dto.getEmail())) {
       throw new CustomException(UserErrorCode.DUPLICATE_EMAIL);
     }
@@ -44,6 +46,7 @@ public class UserService {
       throw new CustomException(UserErrorCode.DUPLICATE_NICKNAME);
     }
 
+    // 1) 유저 생성
     User user = User.builder()
         .email(dto.getEmail())
         .password(passwordEncoder.encode(dto.getPassword()))
@@ -58,21 +61,25 @@ public class UserService {
         .isDeleted(false)
         .build();
 
-    userRepository.save(user);
+    userRepository.save(user);   // 여기서 userId가 생성됨
+
     log.info("회원가입 완료: userId={}, email={}", user.getUserId(), user.getEmail());
 
-    // ⭐ A. 가입 시 0-vector 자동 생성
+    // 2) 선호 벡터 자동 생성 (MapsId 구조)
     UserPreferenceVector vector = UserPreferenceVector.builder()
-        .userId(user.getUserId())
-        .embeddingVector(zeroVectorUtil.generateZeroVectorJson())  // 1536차원 0 벡터
-        .user(user)
+        .user(user)                     // ⭐ PK 자동 매핑됨
+        .embeddingVector(zeroVectorUtil.generateZeroVectorJson())  // 초기 0벡터
         .build();
 
     vectorRepository.save(vector);
+
     log.info("⭐ 신규 유저 벡터 초기화 완료: userId={}", user.getUserId());
 
     return userMapper.toUserResponseDto(user);
   }
+
+
+
 
 
   // ---------------------------------------------------------------------
