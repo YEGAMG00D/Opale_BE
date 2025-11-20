@@ -35,7 +35,7 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
         .csrf(AbstractHttpConfigurer::disable)
-        //.cors(cors -> cors.configurationSource(corsConfigurationSource))
+        .cors(cors -> cors.configurationSource(corsConfigurationSource))
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             // 1) OPTIONS 허용 → multipart preflight 문제 해결
