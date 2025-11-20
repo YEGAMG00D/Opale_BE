@@ -21,6 +21,8 @@ public class PerformanceReviewMapper {
         .poster(entity.getPerformance().getPoster())
         .userId(entity.getUser().getUserId())
         .nickname(entity.getUser().getNickname())
+        .performanceDate(entity.getTicket().getPerformanceDate())
+        .seatInfo(entity.getTicket().getSeatInfo())
         .title(entity.getTitle())
         .contents(entity.getContents())
         .rating(entity.getRating())

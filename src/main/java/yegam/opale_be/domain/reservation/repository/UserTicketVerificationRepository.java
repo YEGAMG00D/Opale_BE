@@ -14,4 +14,13 @@ public interface UserTicketVerificationRepository extends JpaRepository<UserTick
   Optional<UserTicketVerification> findByTicketIdAndUser_UserId(Long ticketId, Long userId);
 
   Page<UserTicketVerification> findAllByUser_UserIdOrderByRequestedAtDesc(Long userId, Pageable pageable);
+
+  Optional<UserTicketVerification> findFirstByUser_UserIdAndPerformance_PerformanceId(
+      Long userId, String performanceId);
+
+  Optional<UserTicketVerification> findFirstByUser_UserIdAndPlace_PlaceId(
+      Long userId, String placeId);
+
+
+
 }

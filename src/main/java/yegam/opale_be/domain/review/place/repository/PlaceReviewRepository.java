@@ -8,6 +8,7 @@ import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.review.place.entity.PlaceReview;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> {
@@ -93,6 +94,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
       @Param("reviewType") ReviewType reviewType
   );
 
+  Optional<PlaceReview> findByTicket_TicketId(Long ticketId);
 
 
 }

@@ -26,4 +26,8 @@ public class PlaceReviewRequestDto {
 
   @Schema(description = "공연장 ID", example = "PL00123")
   private String placeId;
+
+  @Schema(description = "티켓 인증 ID", example = "12")
+  private Long ticketId;
+
 }

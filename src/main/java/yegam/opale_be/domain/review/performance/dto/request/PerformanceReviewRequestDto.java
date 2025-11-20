@@ -26,4 +26,8 @@ public class PerformanceReviewRequestDto {
 
   @Schema(description = "공연 ID", example = "PF12345")
   private String performanceId;
+
+  @Schema(description = "티켓 인증 ID", example = "12")
+  private Long ticketId;
+
 }
