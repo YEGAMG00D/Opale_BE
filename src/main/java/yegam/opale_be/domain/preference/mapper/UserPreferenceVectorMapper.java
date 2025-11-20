@@ -8,31 +8,29 @@ import yegam.opale_be.domain.user.entity.User;
 
 import java.time.format.DateTimeFormatter;
 
-/**
- * UserPreferenceVector Mapper
- * - Entity <-> DTO 변환 전담
- */
 @Component
 public class UserPreferenceVectorMapper {
 
   private static final DateTimeFormatter TIME_FORMATTER =
       DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
+  /** 생성용 */
   public UserPreferenceVector toEntity(User user, UserPreferenceVectorRequestDto dto) {
     return UserPreferenceVector.builder()
-        .user(user)
-        .userId(user.getUserId())
+        .user(user)                        // MapsId → PK 자동매핑
         .embeddingVector(dto.getEmbeddingVector())
         .build();
   }
 
+  /** 수정용 */
   public void updateEntity(UserPreferenceVector entity, UserPreferenceVectorRequestDto dto) {
     entity.setEmbeddingVector(dto.getEmbeddingVector());
   }
 
+  /** 응답 DTO */
   public UserPreferenceVectorResponseDto toResponseDto(UserPreferenceVector entity) {
     return UserPreferenceVectorResponseDto.builder()
-        .userId(entity.getUserId())
+        .userPreferenceVectorId(entity.getUserPreferenceVectorId())
         .embeddingVector(entity.getEmbeddingVector())
         .updatedAt(entity.getUpdatedAt() != null
             ? entity.getUpdatedAt().format(TIME_FORMATTER)
