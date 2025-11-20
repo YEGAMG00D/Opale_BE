@@ -9,6 +9,7 @@ import yegam.opale_be.domain.analytics.entity.UserEventLog;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface UserEventLogRepository extends JpaRepository<UserEventLog, Long> {
@@ -54,4 +55,13 @@ public interface UserEventLogRepository extends JpaRepository<UserEventLog, Long
       @Param("userId") Long userId,
       @Param("from") LocalDateTime from
   );
+
+
+
+  Optional<UserEventLog> findTopByUser_UserIdAndEventTypeOrderByCreatedAtDesc(
+      Long userId, UserEventLog.EventType eventType
+  );
+
+
+
 }
