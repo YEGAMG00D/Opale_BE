@@ -20,6 +20,12 @@ public class PerformanceReviewResponseDto {
   @Schema(description = "공연 ID", example = "PF12345")
   private String performanceId;
 
+  @Schema(description = "공연명", example = "레미제라블")
+  private String performanceTitle;
+
+  @Schema(description = "공연 포스터 URL")
+  private String poster;
+
   @Schema(description = "작성자 ID", example = "7")
   private Long userId;
 

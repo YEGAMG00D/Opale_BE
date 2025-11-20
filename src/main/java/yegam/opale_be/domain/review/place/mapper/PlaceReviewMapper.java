@@ -20,6 +20,8 @@ public class PlaceReviewMapper {
     return PlaceReviewResponseDto.builder()
         .placeReviewId(entity.getPlaceReviewId())
         .placeId(entity.getPlace().getPlaceId())
+        .placeName(entity.getPlace().getName())
+        .placeAddress(entity.getPlace().getAddress())
         .userId(entity.getUser().getUserId())
         .nickname(entity.getUser().getNickname())
         .title(entity.getTitle())

@@ -16,7 +16,7 @@ import lombok.*;
 @Schema(title = "UserEventLogCreateRequest DTO", description = "사용자 행동 로그 생성 요청 DTO")
 public class UserEventLogCreateRequestDto {
 
-  @Schema(description = "이벤트 타입 (VIEW, LIKE, FAVORITE, REVIEW_WRITE, BOOKED)",
+  @Schema(description = "이벤트 타입 (VIEW, FAVORITE, REVIEW_WRITE, BOOKED)",
       example = "VIEW", requiredMode = Schema.RequiredMode.REQUIRED)
   private String eventType;
 
