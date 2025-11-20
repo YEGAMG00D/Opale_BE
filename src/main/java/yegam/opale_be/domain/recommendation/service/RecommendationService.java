@@ -5,6 +5,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.analytics.entity.UserEventLog;
+import yegam.opale_be.domain.analytics.repository.UserEventLogRepository;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.chat.room.repository.ChatRoomRepository;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
@@ -36,6 +38,8 @@ public class RecommendationService {
   private final PerformanceRepository performanceRepository;
   private final PlaceRepository placeRepository;
   private final ChatRoomRepository chatRoomRepository;
+  private final UserEventLogRepository userEventLogRepository;
+
 
   private final RecommendationMapper recommendationMapper;
   private final EmbeddingVectorUtil embeddingVectorUtil;
@@ -294,4 +298,40 @@ public class RecommendationService {
         .recommendations(dtoList)
         .build();
   }
+
+
+  /* ================================
+   최근 본 공연 1개 조회
+   ================================ */
+  public String getRecentViewedPerformance(Long userId) {
+
+    // 최근 VIEW 로그 1개 가져오기
+    var log = userEventLogRepository.findTopByUser_UserIdAndEventTypeOrderByCreatedAtDesc(
+        userId, UserEventLog.EventType.VIEW
+    ).orElse(null);
+
+    if (log == null || !"PERFORMANCE".equalsIgnoreCase(log.getTargetType().name())) {
+      throw new CustomException(RecommendationErrorCode.RECENT_PERFORMANCE_NOT_FOUND);
+    }
+
+    return log.getTargetId(); // 여기가 performanceId
+  }
+
+
+  /* ================================
+     최근 본 공연 기반 추천
+     ================================ */
+  public RecommendationPerformanceListResponseDto getRecentSimilarRecommendations(
+      Long userId, Integer size, String sort
+  ) {
+    // 1) 최근 본 공연 ID 찾기
+    String recentPerformanceId = getRecentViewedPerformance(userId);
+
+    // 2) 기존 "비슷한 공연 추천" 로직 재사용
+    return getSimilarPerformances(recentPerformanceId, size, sort);
+  }
+
+
+
+
 }

@@ -4,6 +4,7 @@ package yegam.opale_be.domain.review.performance.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
+import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
 import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.global.common.BaseTimeEntity;
@@ -54,5 +55,12 @@ public class PerformanceReview extends BaseTimeEntity {
   @JoinColumn(name = "performance_id", nullable = false,
       foreignKey = @ForeignKey(name = "fk_perf_review_performance"))
   private Performance performance;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "ticket_id", nullable = false,
+      foreignKey = @ForeignKey(name = "fk_perf_review_ticket"))
+  private UserTicketVerification ticket;
+
+
 }
 

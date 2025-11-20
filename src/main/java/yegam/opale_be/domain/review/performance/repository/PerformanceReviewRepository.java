@@ -8,6 +8,7 @@ import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.review.performance.entity.PerformanceReview;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PerformanceReviewRepository extends JpaRepository<PerformanceReview, Long> {
@@ -77,6 +78,8 @@ public interface PerformanceReviewRepository extends JpaRepository<PerformanceRe
 """)
   Long countByPerformanceIdAndType(String performanceId, ReviewType type);
 
+
+  Optional<PerformanceReview> findByTicket_TicketId(Long ticketId);
 
 
 }
