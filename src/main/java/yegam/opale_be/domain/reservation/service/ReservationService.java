@@ -60,7 +60,6 @@ public class ReservationService {
 
     // 3) DTO 변환 후 리턴
     return TicketOcrResponseDto.builder()
-        .ticketNumber(result.get("ticketNumber"))
         .performanceName(result.get("performanceName"))
         .performanceDate(performanceDate)
         .seatInfo(result.get("seatInfo"))
@@ -118,7 +117,7 @@ public class ReservationService {
         .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
         .orElse(null);
 
-    ticket.setTicketNumber(dto.getTicketNumber());
+
     ticket.setPerformanceName(dto.getPerformanceName());
     ticket.setSeatInfo(dto.getSeatInfo());
     ticket.setPerformanceDate(dto.getPerformanceDate());

@@ -16,9 +16,6 @@ import java.time.LocalDateTime;
 @Schema(title = "TicketCreateRequest DTO", description = "티켓 인증 등록 요청 DTO")
 public class TicketCreateRequestDto {
 
-  @Schema(description = "예매 번호", example = "A123456789")
-  private String ticketNumber;
-
   @Schema(description = "공연명", example = "뮤지컬 위키드 내한공연")
   private String performanceName;
 
