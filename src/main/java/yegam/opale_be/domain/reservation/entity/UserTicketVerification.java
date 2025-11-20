@@ -22,8 +22,6 @@ public class UserTicketVerification {
   @Column(name = "ticket_id", nullable = false)
   private Long ticketId; // 티켓 인증 내역 고유의 id
 
-  @Column(name = "ticket_number", length = 100)
-  private String ticketNumber; // 예매 번호
 
   @Enumerated(EnumType.STRING)
   @Column(name = "source", length = 10)

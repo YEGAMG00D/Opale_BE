@@ -25,19 +25,14 @@ public class UserPreferenceVectorService {
   private final UserPreferenceVectorMapper preferenceMapper;
   private final UserRepository userRepository;
 
-  /**
-   * 사용자 선호 벡터 조회
-   */
+  /** 조회 */
   public UserPreferenceVectorResponseDto getUserVector(Long userId) {
     UserPreferenceVector vector = preferenceRepository.findById(userId)
         .orElseThrow(() -> new CustomException(PreferenceErrorCode.VECTOR_NOT_FOUND));
-
     return preferenceMapper.toResponseDto(vector);
   }
 
-  /**
-   * 사용자 선호 벡터 생성
-   */
+  /** 생성 */
   @Transactional
   public UserPreferenceVectorResponseDto createUserVector(Long userId, UserPreferenceVectorRequestDto dto) {
     User user = userRepository.findById(userId)
@@ -45,22 +40,16 @@ public class UserPreferenceVectorService {
 
     UserPreferenceVector vector = preferenceMapper.toEntity(user, dto);
     UserPreferenceVector saved = preferenceRepository.save(vector);
-
-    log.info("🎯 사용자 선호 벡터 생성: userId={}", userId);
     return preferenceMapper.toResponseDto(saved);
   }
 
-  /**
-   * 사용자 선호 벡터 업데이트
-   */
+  /** 업데이트 */
   @Transactional
   public UserPreferenceVectorResponseDto updateUserVector(Long userId, UserPreferenceVectorRequestDto dto) {
-    UserPreferenceVector vector = preferenceRepository.findById(userId)
+    UserPreferenceVector entity = preferenceRepository.findById(userId)
         .orElseThrow(() -> new CustomException(PreferenceErrorCode.VECTOR_NOT_FOUND));
 
-    preferenceMapper.updateEntity(vector, dto);
-
-    log.info("🔄 사용자 선호 벡터 업데이트: userId={}", userId);
-    return preferenceMapper.toResponseDto(vector);
+    preferenceMapper.updateEntity(entity, dto);
+    return preferenceMapper.toResponseDto(entity);
   }
 }

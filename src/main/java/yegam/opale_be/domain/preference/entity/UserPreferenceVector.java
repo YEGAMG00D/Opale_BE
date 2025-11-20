@@ -16,8 +16,8 @@ import yegam.opale_be.global.common.BaseTimeEntity;
 public class UserPreferenceVector extends BaseTimeEntity {
 
   @Id
-  @Column(name = "user_id", length = 20)
-  private Long userId;
+  @Column(name = "user_preference_vector_id", length = 20)
+  private Long userPreferenceVectorId;
 
   @Lob
   @Column(name = "embedding_vector", columnDefinition = "MEDIUMTEXT")

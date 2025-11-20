@@ -19,8 +19,6 @@ public class TicketDetailResponseDto {
   @Schema(description = "티켓 고유 ID", example = "101")
   private Long ticketId;
 
-  @Schema(description = "예매 번호", example = "A123456789")
-  private String ticketNumber;
 
   @Schema(description = "공연명", example = "뮤지컬 위키드 내한공연")
   private String performanceName;
