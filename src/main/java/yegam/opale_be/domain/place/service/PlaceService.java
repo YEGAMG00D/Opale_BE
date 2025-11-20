@@ -33,26 +33,31 @@ public class PlaceService {
   private final PlaceReviewRepository placeReviewRepository;
 
   // -----------------------------------------------------------
-  // 📌 공연장 목록 조회 (리뷰 통계 포함)
+  // 공연장 목록 조회 (리뷰 통계 포함)
   // -----------------------------------------------------------
   public PlaceListResponseDto getPlaceList(PlaceListRequestDto dto) {
 
     String keyword = emptyToNull(dto.getKeyword());
-    String area = emptyToNull(dto.getArea());
+    String areaFilter = emptyToNull(dto.getArea());
 
     int page = (dto.getPage() != null && dto.getPage() > 0) ? dto.getPage() - 1 : 0;
     int size = (dto.getSize() != null && dto.getSize() > 0) ? dto.getSize() : 20;
 
     PageRequest pageable = PageRequest.of(page, size);
 
+    // 1) 프론트에서 오는 area 값(전체/서울/경기/충청/강원/경상/전라/제주)을
+    //    DB에 저장된 실제 area 값 리스트(서울특별시, 경기도, 부산광역시 등)로 변환
+    List<String> areaList = resolveAreaFilter(areaFilter);
+    List<String> areasParam = areaList.isEmpty() ? null : areaList;
+
     Page<Place> pageResult =
-        placeRepository.search(keyword, area, pageable);
+        placeRepository.search(keyword, areasParam, pageable);
 
     return placeMapper.toPagedPlaceListDtoWithStats(pageResult, placeReviewRepository);
   }
 
   // -----------------------------------------------------------
-  // 📌 근처 공연장 조회
+  // 근처 공연장 조회
   // -----------------------------------------------------------
   public PlaceNearbyListResponseDto getNearbyPlaces(PlaceNearbyRequestDto dto) {
     if (dto.getLatitude() == null || dto.getLongitude() == null) {
@@ -80,7 +85,7 @@ public class PlaceService {
             sortType
         );
 
-    // ⭐ 리뷰 개수 / 평점 추가 ⭐
+    // 리뷰 개수 / 평점 추가
     response.getPlaces().forEach(p -> {
       Long count = placeReviewRepository.countByPlaceIdAndType(p.getPlaceId(), ReviewType.PLACE);
       Double avg = placeReviewRepository.avgRatingByPlaceIdAndType(p.getPlaceId(), ReviewType.PLACE);
@@ -99,7 +104,7 @@ public class PlaceService {
   }
 
   // -----------------------------------------------------------
-  // 📌 공연장 기본 정보 조회 (+ 리뷰 통계)
+  // 공연장 기본 정보 조회 (+ 리뷰 통계)
   // -----------------------------------------------------------
   public PlaceBasicResponseDto getPlaceBasic(String placeId) {
     Place place = findPlace(placeId);
@@ -107,7 +112,7 @@ public class PlaceService {
   }
 
   // -----------------------------------------------------------
-  // 📌 공연관 목록
+  // 공연관 목록
   // -----------------------------------------------------------
   public BasePlaceListResponseDto<PlaceStageResponseDto> getPlaceStages(String placeId) {
     Place place = findPlace(placeId);
@@ -121,7 +126,7 @@ public class PlaceService {
   }
 
   // -----------------------------------------------------------
-  // 📌 편의시설
+  // 편의시설
   // -----------------------------------------------------------
   public PlaceFacilityResponseDto getPlaceFacilities(String placeId) {
     Place place = findPlace(placeId);
@@ -129,7 +134,7 @@ public class PlaceService {
   }
 
   // -----------------------------------------------------------
-  // 📌 공연장별 공연 목록
+  // 공연장별 공연 목록
   // -----------------------------------------------------------
   public BasePlaceListResponseDto<PlacePerformanceResponseDto> getPlacePerformances(String placeId) {
     Place place = findPlace(placeId);
@@ -143,7 +148,7 @@ public class PlaceService {
   }
 
   // -----------------------------------------------------------
-  // 📌 util
+  // util
   // -----------------------------------------------------------
   private Place findPlace(String id) {
     return placeRepository.findById(id)
@@ -152,5 +157,65 @@ public class PlaceService {
 
   private String emptyToNull(String s) {
     return (s == null || s.isBlank()) ? null : s;
+  }
+
+  /**
+   * 프론트에서 넘어오는 area 필터값을 DB area 값 리스트로 변환
+   *
+   * 프론트 값: 전체 / 서울 / 경기 / 충청 / 강원 / 경상 / 전라 / 제주
+   * DB 값:    서울특별시, 경기도, 인천광역시, 부산광역시, 경상북도, 경상남도, ...
+   */
+  private List<String> resolveAreaFilter(String areaFilter) {
+    if (areaFilter == null || areaFilter.isBlank() || "전체".equals(areaFilter)) {
+      // 필터 없이 전체 검색
+      return List.of();
+    }
+
+    switch (areaFilter) {
+      case "서울":
+        return List.of("서울특별시");
+
+      case "경기":
+        // 수도권: 경기도 + 인천광역시
+        return List.of("경기도", "인천광역시");
+
+      case "충청":
+        return List.of(
+            "충청북도",
+            "충청남도",
+            "세종특별자치시",
+            "대전광역시"
+        );
+
+      case "강원":
+        // 데이터는 강원도/강원특별자치도 섞여 있을 수 있지만
+        // 강원특별자치도도 혹시 모를 상황 대비해서 함께 포함해도 됨
+        return List.of("강원도", "강원특별자치도");
+
+      case "경상":
+        return List.of(
+            "경상북도",
+            "경상남도",
+            "부산광역시",
+            "대구광역시",
+            "울산광역시"
+        );
+
+      case "전라":
+        return List.of(
+            "전라북도",
+            "전북특별자치도",
+            "전라남도",
+            "광주광역시"
+        );
+
+      case "제주":
+        return List.of("제주특별자치도");
+
+      default:
+        // 혹시 프론트에서 이미 "서울특별시" 같은 풀네임을 보내는 경우도
+        // 안전하게 처리해주기 위한 fallback
+        return List.of(areaFilter);
+    }
   }
 }

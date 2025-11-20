@@ -1,8 +1,9 @@
 package yegam.opale_be.domain.reservation.mapper;
 
 import org.springframework.stereotype.Component;
-import yegam.opale_be.domain.reservation.dto.request.*;
-import yegam.opale_be.domain.reservation.dto.response.*;
+import yegam.opale_be.domain.reservation.dto.request.TicketCreateRequestDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketDetailResponseDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketSimpleResponseDto;
 import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
 import yegam.opale_be.domain.reservation.entity.Source;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
@@ -67,6 +68,7 @@ public class ReservationMapper {
         .isVerified(entity.getIsVerified())
         .requestedAt(entity.getRequestedAt())
         .updatedAt(entity.getUpdatedAt())
+        .source(entity.getSource().name())
         .build();
   }
 
@@ -74,6 +76,7 @@ public class ReservationMapper {
   public TicketSimpleResponseDto toSimpleResponseDto(UserTicketVerification entity) {
     return TicketSimpleResponseDto.builder()
         .ticketId(entity.getTicketId())
+        .ticketNumber(entity.getTicketNumber())    // ⭐ 누락되었던 부분 추가됨!
         .performanceName(entity.getPerformanceName())
         .performanceDate(entity.getPerformanceDate())
         .seatInfo(entity.getSeatInfo())
@@ -81,7 +84,7 @@ public class ReservationMapper {
         .build();
   }
 
-  /** ✅ Entity 목록 → SimpleResponseDto List */
+  /** Entity 목록 → SimpleResponseDto List */
   public List<TicketSimpleResponseDto> toSimpleResponseDtoList(List<UserTicketVerification> list) {
     return list.stream()
         .map(this::toSimpleResponseDto)

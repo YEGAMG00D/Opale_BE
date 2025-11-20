@@ -43,6 +43,9 @@ public class Place {
   @Column(name = "address", length = 255)
   private String address;
 
+  @Column(name = "area", length = 20)
+  private String area;
+
   @Column(name = "la", precision = 10, scale = 6)
   private BigDecimal la;
 
