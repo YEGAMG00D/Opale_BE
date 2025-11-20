@@ -20,6 +20,12 @@ public class PlaceReviewResponseDto {
   @Schema(description = "공연장 ID", example = "PL00123")
   private String placeId;
 
+  @Schema(description = "공연장명", example = "세종문화회관")
+  private String placeName;
+
+  @Schema(description = "주소", example = "서울특별시 종로구 세종대로 175")
+  private String placeAddress;
+
   @Schema(description = "작성자 ID", example = "7")
   private Long userId;
 

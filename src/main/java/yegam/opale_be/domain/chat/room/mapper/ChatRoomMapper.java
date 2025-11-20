@@ -7,6 +7,7 @@ import yegam.opale_be.domain.chat.room.dto.response.*;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.user.entity.User;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,7 +32,7 @@ public class ChatRoomMapper {
         .build();
   }
 
-  /** 엔티티 → 응답 DTO */
+  /** 엔티티 → 일반 응답 DTO */
   public ChatRoomResponseDto toResponseDto(ChatRoom room) {
     return ChatRoomResponseDto.builder()
         .roomId(room.getRoomId())
@@ -99,6 +100,24 @@ public class ChatRoomMapper {
         .lastMessage(messageResponse.getMessage())
         .lastMessageTime(messageResponse.getSentAt())
         .isActive(true)
+        .build();
+  }
+
+  /* ============================================================
+        ⭐ 공연별 PUBLIC 채팅방 존재 여부 DTO 변환
+     ============================================================ */
+  public ChatRoomExistenceResponseDto toExistenceDto(ChatRoom room) {
+
+    if (room == null) {
+      return ChatRoomExistenceResponseDto.builder()
+          .exists(false)
+          .room(null)
+          .build();
+    }
+
+    return ChatRoomExistenceResponseDto.builder()
+        .exists(true)
+        .room(toResponseDto(room))
         .build();
   }
 }

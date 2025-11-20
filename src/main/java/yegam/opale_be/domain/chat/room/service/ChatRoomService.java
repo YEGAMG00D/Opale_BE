@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomCreateRequestDto;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomJoinRequestDto;
+import yegam.opale_be.domain.chat.room.dto.request.ChatRoomSearchRequestDto;
 import yegam.opale_be.domain.chat.room.dto.response.*;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
 import yegam.opale_be.domain.chat.room.entity.RoomType;
@@ -56,23 +57,29 @@ public class ChatRoomService {
   }
 
   /* ============================================================
-      2. 채팅방 목록 조회
+      2. 채팅방 목록 조회 (검색 적용 버전)
      ============================================================ */
-  public ChatRoomListResponseDto getChatRooms(String roomTypeStr, String performanceId) {
-    List<ChatRoom> rooms;
+  public ChatRoomListResponseDto getChatRooms(ChatRoomSearchRequestDto dto) {
 
-    if (roomTypeStr != null && !roomTypeStr.isBlank()) {
-      RoomType roomType = RoomType.valueOf(roomTypeStr);
+    // 1) null-safe 변환
+    String roomTypeStr = (dto.getRoomType() == null || dto.getRoomType().isBlank()) ? null : dto.getRoomType();
+    String performanceId = (dto.getPerformanceId() == null || dto.getPerformanceId().isBlank()) ? null : dto.getPerformanceId();
+    String keyword = (dto.getKeyword() == null || dto.getKeyword().isBlank()) ? null : dto.getKeyword();
 
-      if (performanceId != null && !performanceId.isBlank()) {
-        rooms = chatRoomRepository.findByRoomTypeAndPerformance_PerformanceId(roomType, performanceId);
-      } else {
-        rooms = chatRoomRepository.findByRoomType(roomType);
+    // 2) roomType 변환
+    RoomType roomType = null;
+    if (roomTypeStr != null) {
+      try {
+        roomType = RoomType.valueOf(roomTypeStr);
+      } catch (IllegalArgumentException e) {
+        throw new CustomException(ChatRoomErrorCode.INVALID_ROOM_TYPE);
       }
-    } else {
-      rooms = chatRoomRepository.findAll();
     }
 
+    // 3) Repository 검색 호출
+    List<ChatRoom> rooms = chatRoomRepository.searchRooms(roomType, performanceId, keyword);
+
+    // 4) Mapper 변환
     return chatRoomMapper.toListResponseDto(rooms);
   }
 
@@ -102,14 +109,14 @@ public class ChatRoomService {
     chatRoomRepository.delete(room);
     log.info("채팅방 삭제 완료 - roomId={}, deletedBy={}", roomId, userId);
 
-    // broadcast (활성 false로 갱신)
+    // 방송 상태 업데이트
     ChatRoomUpdateDto updateDto = chatRoomMapper.toUpdateDto(room);
     updateDto.setIsActive(false);
     messagingTemplate.convertAndSend("/topic/rooms", updateDto);
   }
 
   /* ============================================================
-      5. 비공개방 입장 (비밀번호 검증 + 방문자 수 증가)
+      5. 비공개방 입장
      ============================================================ */
   @Transactional
   public ChatRoomResponseDto joinRoom(Long userId, Long roomId, ChatRoomJoinRequestDto dto) {
@@ -135,4 +142,22 @@ public class ChatRoomService {
 
     return chatRoomMapper.toResponseDto(room);
   }
+
+
+
+  /* ============================================================
+    공연별 PUBLIC 채팅방 조회
+============================================================ */
+  public ChatRoomExistenceResponseDto getPublicRoomByPerformance(String performanceId) {
+    ChatRoom room = chatRoomRepository
+        .findFirstByRoomTypeAndPerformance_PerformanceId(RoomType.PERFORMANCE_PUBLIC, performanceId)
+        .orElse(null);
+
+    return chatRoomMapper.toExistenceDto(room);
+  }
+
+
+
+
+
 }

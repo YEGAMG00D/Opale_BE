@@ -75,10 +75,12 @@ public class SecurityConfig {
 
             // 오픈 채팅방(public) + 메시지 조회 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/chat/rooms/public/performance/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/chat/messages/**").permitAll()
 
             // 채팅방 목록(GET)도 허용
             .requestMatchers(HttpMethod.GET, "/api/chat/rooms").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/chat/rooms/search").permitAll()
 
             // 추천 API (비로그인 허용)
             .requestMatchers(HttpMethod.GET,

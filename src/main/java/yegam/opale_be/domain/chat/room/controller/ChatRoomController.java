@@ -10,6 +10,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomCreateRequestDto;
 import yegam.opale_be.domain.chat.room.dto.request.ChatRoomJoinRequestDto;
+import yegam.opale_be.domain.chat.room.dto.request.ChatRoomSearchRequestDto;
+import yegam.opale_be.domain.chat.room.dto.response.ChatRoomExistenceResponseDto;
 import yegam.opale_be.domain.chat.room.dto.response.ChatRoomListResponseDto;
 import yegam.opale_be.domain.chat.room.dto.response.ChatRoomResponseDto;
 import yegam.opale_be.domain.chat.room.dto.response.ChatRoomUpdateDto;
@@ -59,16 +61,42 @@ public class ChatRoomController {
     return ResponseEntity.ok(BaseResponse.success("채팅방 생성 성공", response));
   }
 
+//  /** 채팅방 목록 조회 */
+//  @Operation(summary = "채팅방 목록 조회", description = "roomType, performanceId를 기준으로 채팅방 목록을 조회합니다.")
+//  @GetMapping
+//  public ResponseEntity<BaseResponse<ChatRoomListResponseDto>> getChatRooms(
+//      @RequestParam(required = false) String roomType,
+//      @RequestParam(required = false) String performanceId
+//  ) {
+//    ChatRoomListResponseDto response = chatRoomService.getChatRooms(roomType, performanceId);
+//    return ResponseEntity.ok(BaseResponse.success("채팅방 목록 조회 성공", response));
+//  }
+
   /** 채팅방 목록 조회 */
-  @Operation(summary = "채팅방 목록 조회", description = "roomType, performanceId를 기준으로 채팅방 목록을 조회합니다.")
-  @GetMapping
+  @Operation(summary = "채팅방 목록 조회", description = "roomType, performanceId, keyword를 기준으로 채팅방 목록을 조회합니다.")
+  @PostMapping("/search")
   public ResponseEntity<BaseResponse<ChatRoomListResponseDto>> getChatRooms(
-      @RequestParam(required = false) String roomType,
-      @RequestParam(required = false) String performanceId
+      @RequestBody ChatRoomSearchRequestDto dto
   ) {
-    ChatRoomListResponseDto response = chatRoomService.getChatRooms(roomType, performanceId);
+    ChatRoomListResponseDto response = chatRoomService.getChatRooms(dto);
     return ResponseEntity.ok(BaseResponse.success("채팅방 목록 조회 성공", response));
   }
+
+  /** 공연 ID 기준 PUBLIC 채팅방 조회 (비로그인 허용) */
+  @Operation(
+      summary = "공연별 PUBLIC 채팅방 존재 여부 + 정보 조회",
+      description = "PERFORMANCE_PUBLIC 타입이며 특정 공연 ID의 오픈 채팅방이 존재하는지 반환합니다."
+  )
+  @GetMapping("/public/performance/{performanceId}")
+  public ResponseEntity<BaseResponse<ChatRoomExistenceResponseDto>> getPublicRoomByPerformance(
+      @PathVariable String performanceId
+  ) {
+    ChatRoomExistenceResponseDto response = chatRoomService.getPublicRoomByPerformance(performanceId);
+    return ResponseEntity.ok(BaseResponse.success("공연별 PUBLIC 채팅방 조회 성공", response));
+  }
+
+
+
 
   /** 단일 채팅방 조회 */
   @Operation(summary = "채팅방 상세 조회 (로그인 필요)", description = "roomId를 통해 채팅방 상세 정보를 조회합니다.")

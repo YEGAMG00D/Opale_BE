@@ -17,6 +17,8 @@ public class PerformanceReviewMapper {
     return PerformanceReviewResponseDto.builder()
         .performanceReviewId(entity.getPerformanceReviewId())
         .performanceId(entity.getPerformance().getPerformanceId())
+        .performanceTitle(entity.getPerformance().getTitle())
+        .poster(entity.getPerformance().getPoster())
         .userId(entity.getUser().getUserId())
         .nickname(entity.getUser().getNickname())
         .title(entity.getTitle())
