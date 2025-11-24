@@ -57,6 +57,7 @@ public class SecurityConfig {
                 "/health",
                 "/api/performances/**",
                 "/api/places/**",
+                "/api/discounts/**",
                 "/ws/**"
             ).permitAll()
 

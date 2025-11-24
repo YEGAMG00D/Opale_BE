@@ -88,15 +88,43 @@ public class PerformanceReviewService {
 
   /** 리뷰 작성 */
   public PerformanceReviewResponseDto createReview(Long userId, PerformanceReviewRequestDto dto) {
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.REVIEW_ACCESS_DENIED));
 
     Performance performance = performanceRepository.findById(dto.getPerformanceId())
         .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.PERFORMANCE_NOT_FOUND));
 
-    UserTicketVerification ticket = ticketRepository
-        .findFirstByUser_UserIdAndPerformance_PerformanceId(userId, dto.getPerformanceId())
-        .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED));
+    ReviewType type = dto.getReviewType();
+
+    UserTicketVerification ticket = null;
+
+    // ⭐ EXPECTATION(기대평) → 티켓 없어도 됨
+    if (type == ReviewType.EXPECTATION) {
+      ticket = null;
+    }
+
+    // ⭐ AFTER(후기) 또는 PLACE → 반드시 티켓 필요
+    else if (type == ReviewType.AFTER || type == ReviewType.PLACE) {
+
+      // dto.getTicketId() 자체가 null이면 바로 오류
+      if (dto.getTicketId() == null) {
+        throw new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED);
+      }
+
+      ticket = ticketRepository.findById(dto.getTicketId())
+          .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED));
+
+      // 티켓 소유자 확인
+      if (!ticket.getUser().getUserId().equals(userId)) {
+        throw new CustomException(PerformanceReviewErrorCode.REVIEW_ACCESS_DENIED);
+      }
+
+      // 공연이랑 티켓의 공연이 매칭되는지 확인
+      if (!ticket.getPerformance().getPerformanceId().equals(dto.getPerformanceId())) {
+        throw new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED);
+      }
+    }
 
     PerformanceReview review = PerformanceReview.builder()
         .user(user)
@@ -105,7 +133,7 @@ public class PerformanceReviewService {
         .title(dto.getTitle())
         .contents(dto.getContents())
         .rating(dto.getRating())
-        .reviewType(dto.getReviewType())
+        .reviewType(type)
         .isDeleted(false)
         .build();
 
@@ -115,6 +143,7 @@ public class PerformanceReviewService {
 
     return reviewMapper.toResponseDto(review);
   }
+
 
   /** 리뷰 수정 */
   public PerformanceReviewResponseDto updateReview(Long userId, Long reviewId, PerformanceReviewRequestDto dto) {
@@ -126,6 +155,24 @@ public class PerformanceReviewService {
       throw new CustomException(PerformanceReviewErrorCode.REVIEW_ACCESS_DENIED);
     }
 
+    ReviewType type = dto.getReviewType();
+
+    // EXPECTATION 은 티켓을 null 로 강제
+    if (type == ReviewType.EXPECTATION) {
+      review.setTicket(null);
+    }
+    // AFTER + PLACE 는 티켓 필수
+    else {
+      if (dto.getTicketId() == null) {
+        throw new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED);
+      }
+
+      UserTicketVerification ticket = ticketRepository.findById(dto.getTicketId())
+          .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.TICKET_REQUIRED));
+
+      review.setTicket(ticket);
+    }
+
     review.setTitle(dto.getTitle());
     review.setContents(dto.getContents());
     review.setRating(dto.getRating());
@@ -135,6 +182,7 @@ public class PerformanceReviewService {
 
     return reviewMapper.toResponseDto(review);
   }
+
 
   /** 리뷰 삭제 */
   public void deleteReview(Long userId, Long reviewId) {

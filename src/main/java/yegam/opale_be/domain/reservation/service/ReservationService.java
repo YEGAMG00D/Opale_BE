@@ -1,5 +1,8 @@
 package yegam.opale_be.domain.reservation.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,8 +15,13 @@ import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
-import yegam.opale_be.domain.reservation.dto.request.*;
-import yegam.opale_be.domain.reservation.dto.response.*;
+import yegam.opale_be.domain.reservation.dto.request.TicketCreateRequestDto;
+import yegam.opale_be.domain.reservation.dto.request.TicketUpdateRequestDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketDetailResponseDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketOcrResponseDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketReviewBundleResponseDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketSimpleListResponseDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketSimpleResponseDto;
 import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
 import yegam.opale_be.domain.reservation.exception.ReservationErrorCode;
 import yegam.opale_be.domain.reservation.mapper.ReservationMapper;
@@ -27,10 +35,6 @@ import yegam.opale_be.domain.review.place.repository.PlaceReviewRepository;
 import yegam.opale_be.domain.user.entity.User;
 import yegam.opale_be.domain.user.repository.UserRepository;
 import yegam.opale_be.global.exception.CustomException;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Slf4j
 @Service
@@ -50,7 +54,6 @@ public class ReservationService {
 
   private final PerformanceReviewMapper performanceReviewMapper;
   private final PlaceReviewMapper placeReviewMapper;
-
 
   /** 티켓 이미지 OCR → 텍스트 추출 */
   public TicketOcrResponseDto extractTicketInfoByOcr(MultipartFile file) {
@@ -87,10 +90,20 @@ public class ReservationService {
         .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
         .orElse(null);
 
-    // 🔎 placeName 부분 일치
-    Place place = placeRepository
-        .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
-        .orElse(null);
+    // 🔎 공연장 찾기 (다단계 매칭)
+    Place place = null;
+
+    // 1) placeName이 비어있지 않으면 부분 일치 검색
+    if (dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
+      place = placeRepository
+          .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
+          .orElse(null);
+    }
+
+    // 2) 그래도 못 찾았고, performance 가 있으면 → 공연의 공연장 사용
+    if (place == null && performance != null) {
+      place = performance.getPlace();
+    }
 
     // 🔥 seatInfo / performanceDate는 이미 front에서 조립되어 들어옴
     UserTicketVerification ticket = reservationMapper.toEntity(dto, user, performance, place);
@@ -123,9 +136,18 @@ public class ReservationService {
         .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
         .orElse(null);
 
-    Place place = placeRepository
-        .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
-        .orElse(null);
+    // 🔎 공연장 찾기 (다단계 매칭)
+    Place place = null;
+
+    if (dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
+      place = placeRepository
+          .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
+          .orElse(null);
+    }
+
+    if (place == null && performance != null) {
+      place = performance.getPlace();
+    }
 
     // 🔥 front에서 조립된 값 그대로 저장
     ticket.setPerformanceName(dto.getPerformanceName());
@@ -137,7 +159,10 @@ public class ReservationService {
 
     ticket.setUpdatedAt(LocalDateTime.now());
 
-    log.info("📝 티켓 수정 완료: ticketId={}, userId={}", ticket.getTicketId(), userId);
+    log.info("📝 티켓 수정 완료: ticketId={}, userId={}, performance={}, place={}",
+        ticket.getTicketId(), userId,
+        performance != null ? performance.getTitle() : "null",
+        place != null ? place.getName() : "null");
 
     return reservationMapper.toDetailResponseDto(ticket);
   }
@@ -183,8 +208,6 @@ public class ReservationService {
         .build();
   }
 
-
-
   @Transactional(readOnly = true)
   public TicketReviewBundleResponseDto getTicketReviews(Long userId, Long ticketId) {
 
@@ -213,9 +236,5 @@ public class ReservationService {
         )
         .build();
   }
-
-
-
-
 
 }
