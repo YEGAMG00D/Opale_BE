@@ -32,6 +32,9 @@ public class PerformanceReviewResponseDto {
   @Schema(description = "작성자 닉네임", example = "musical_fan_01")
   private String nickname;
 
+  @Schema(description = "티켓 인증 ID", example = "12")
+  private Long ticketId;
+
   @Schema(description = "관람 날짜/시간")
   private LocalDateTime performanceDate;
 

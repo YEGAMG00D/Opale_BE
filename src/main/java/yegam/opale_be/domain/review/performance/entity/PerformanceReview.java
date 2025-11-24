@@ -57,9 +57,10 @@ public class PerformanceReview extends BaseTimeEntity {
   private Performance performance;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ticket_id", nullable = false,
+  @JoinColumn(name = "ticket_id", nullable = true,
       foreignKey = @ForeignKey(name = "fk_perf_review_ticket"))
   private UserTicketVerification ticket;
+
 
 
 }

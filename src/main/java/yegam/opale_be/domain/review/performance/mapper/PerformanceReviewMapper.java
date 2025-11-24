@@ -14,15 +14,38 @@ public class PerformanceReviewMapper {
   public PerformanceReviewResponseDto toResponseDto(PerformanceReview entity) {
     if (entity == null) return null;
 
+    // ⭐ ticket null-safe + Lazy loading safe
+    Long ticketId = null;
+    String seatInfo = null;
+    java.time.LocalDateTime performanceDate = null;
+
+    if (entity.getTicket() != null) {
+      try {
+        ticketId = entity.getTicket().getTicketId();
+        seatInfo = entity.getTicket().getSeatInfo();
+        performanceDate = entity.getTicket().getPerformanceDate();
+      } catch (Exception e) {
+        // 잘못된 Proxy / ID=0 / Lazy 로딩 오류 방지
+        ticketId = null;
+        seatInfo = null;
+        performanceDate = null;
+      }
+    }
+
     return PerformanceReviewResponseDto.builder()
         .performanceReviewId(entity.getPerformanceReviewId())
         .performanceId(entity.getPerformance().getPerformanceId())
         .performanceTitle(entity.getPerformance().getTitle())
         .poster(entity.getPerformance().getPoster())
+
         .userId(entity.getUser().getUserId())
         .nickname(entity.getUser().getNickname())
-        .performanceDate(entity.getTicket().getPerformanceDate())
-        .seatInfo(entity.getTicket().getSeatInfo())
+
+        .ticketId(ticketId)
+
+        .performanceDate(performanceDate)
+        .seatInfo(seatInfo)
+
         .title(entity.getTitle())
         .contents(entity.getContents())
         .rating(entity.getRating())
