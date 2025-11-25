@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.email.service.EmailService;
 import yegam.opale_be.domain.preference.entity.UserPreferenceVector;
 import yegam.opale_be.domain.preference.repository.UserPreferenceVectorRepository;
 import yegam.opale_be.domain.preference.util.ZeroVectorUtil;
@@ -27,6 +28,7 @@ public class UserService {
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
+  private final EmailService emailService;
 
   // ⭐ 추가
   private final UserPreferenceVectorRepository vectorRepository;
@@ -149,4 +151,78 @@ public class UserService {
         })
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
   }
+
+
+
+
+  // ---------------------------------------------------------------------
+  // 임시 비밀번호 발급 + 이메일 발송
+  // ---------------------------------------------------------------------
+  @Transactional
+  public PasswordResetResponseDto resetPassword(PasswordResetRequestDto dto) {
+
+    // 1) 이메일로 사용자 조회
+    User user = userRepository.findByEmail(dto.getEmail())
+        .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+
+    // 2) 임시 비밀번호 생성
+    String tempPassword = generateTempPassword();
+    String encodedTempPw = passwordEncoder.encode(tempPassword);
+
+    // 3) 사용자 비밀번호 업데이트
+    user.setPassword(encodedTempPw);
+
+    log.info("임시 비밀번호 발급 완료: email={}, tempPassword(raw)={}",
+        user.getEmail(), tempPassword);
+
+    // ⭐ 4) 이메일로 임시 비밀번호 발송 (여기가 중요함!)
+    emailService.sendTempPassword(user.getEmail(), tempPassword);
+
+    // 5) response DTO 반환
+    return userMapper.toPasswordResetResponseDto(user.getEmail());
+  }
+
+
+
+
+
+  /** 랜덤 임시 비밀번호 생성 (패턴 준수: 영문+숫자+특수문자 포함, 10자리) */
+  private String generateTempPassword() {
+
+    String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    String lower = "abcdefghijklmnopqrstuvwxyz";
+    String digits = "0123456789";
+    String special = "!@#$%^&*()_+-=";
+
+    String all = upper + lower + digits + special;
+    java.util.Random random = new java.util.Random();
+
+    // ❶ 필수 문자 1개씩 강제 포함
+    StringBuilder password = new StringBuilder();
+    password.append(upper.charAt(random.nextInt(upper.length())));   // 영문 대문자 1
+    password.append(digits.charAt(random.nextInt(digits.length()))); // 숫자 1
+    password.append(special.charAt(random.nextInt(special.length()))); // 특수문자 1
+
+    // ❷ 나머지 7문자는 전체에서 랜덤
+    for (int i = 0; i < 7; i++) {
+      password.append(all.charAt(random.nextInt(all.length())));
+    }
+
+    // ❸ 셔플해서 예측 불가능하게
+    java.util.List<Character> chars = password.chars()
+        .mapToObj(c -> (char) c)
+        .collect(java.util.stream.Collectors.toList());
+
+    java.util.Collections.shuffle(chars);
+
+    // ❹ 최종 문자열로 변환
+    StringBuilder finalPw = new StringBuilder();
+    chars.forEach(finalPw::append);
+
+    return finalPw.toString();
+  }
+
+
+
+
 }

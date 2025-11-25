@@ -62,4 +62,14 @@ public class UserMapper {
         .available(!exists)
         .build();
   }
+
+  /** 임시 비밀번호 발급 결과 → PasswordResetResponseDto 변환 */
+  public PasswordResetResponseDto toPasswordResetResponseDto(String email) {
+    return PasswordResetResponseDto.builder()
+        .email(email)
+        .success(true)
+        .build();
+  }
+
+
 }
