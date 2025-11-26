@@ -10,6 +10,7 @@ import yegam.opale_be.domain.culture.performance.exception.PerformanceErrorCode;
 import yegam.opale_be.domain.culture.performance.mapper.AdminPerformanceMapper;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceImageRepository;
+import yegam.opale_be.domain.culture.performance.repository.PerformanceVideoRepository;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.storage.FileStorageService;
 
@@ -23,6 +24,7 @@ public class AdminPerformanceService {
 
   private final PerformanceRepository performanceRepository;
   private final PerformanceImageRepository performanceImageRepository;
+  private final PerformanceVideoRepository performanceVideoRepository;
   private final AdminPerformanceMapper mapper;
   private final FileStorageService fileStorageService;
 
@@ -110,5 +112,62 @@ public class AdminPerformanceService {
       throw new CustomException(PerformanceErrorCode.PERFORMANCE_IMAGE_NOT_FOUND);
     }
     performanceImageRepository.deleteById(imageId);
+  }
+
+
+  // ============================================================
+  // 🎬 4) 공연 유튜브 영상 목록 조회
+  // ============================================================
+  public AdminPerformanceVideoListResponseDto getVideos(String performanceId) {
+    Performance performance = getPerformance(performanceId);
+
+    List<PerformanceVideo> videos =
+        performanceVideoRepository.findByPerformance_PerformanceId(performanceId);
+
+    return AdminPerformanceVideoListResponseDto.builder()
+        .performanceId(performance.getPerformanceId())
+        .title(performance.getTitle())
+        .totalCount(videos.size())
+        .videos(mapper.toVideoResponseList(videos))
+        .build();
+  }
+
+  // ============================================================
+  // 🎬 5) 공연 유튜브 영상 등록
+  // ============================================================
+  @Transactional
+  public AdminPerformanceVideoResponseDto uploadYoutubeVideo(
+      String performanceId,
+      String youtubeVideoId,
+      String title,
+      String thumbnailUrl,
+      String sourceUrl
+  ) {
+    Performance performance = getPerformance(performanceId);
+
+    String embedUrl = "https://www.youtube.com/embed/" + youtubeVideoId;
+
+    PerformanceVideo video = PerformanceVideo.builder()
+        .performance(performance)
+        .youtubeVideoId(youtubeVideoId)
+        .title(title)
+        .thumbnailUrl(thumbnailUrl)
+        .sourceUrl(sourceUrl)
+        .embedUrl(embedUrl)
+        .build();
+
+    PerformanceVideo saved = performanceVideoRepository.save(video);
+    return mapper.toVideoResponse(saved);
+  }
+
+  // ============================================================
+  // 🎬 6) 공연 유튜브 영상 삭제
+  // ============================================================
+  @Transactional
+  public void deleteVideo(Long videoId) {
+    if (!performanceVideoRepository.existsById(videoId)) {
+      throw new CustomException(PerformanceErrorCode.PERFORMANCE_VIDEO_NOT_FOUND);
+    }
+    performanceVideoRepository.deleteById(videoId);
   }
 }

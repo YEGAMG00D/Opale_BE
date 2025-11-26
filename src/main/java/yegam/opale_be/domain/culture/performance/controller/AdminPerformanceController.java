@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import yegam.opale_be.domain.culture.performance.dto.response.admin.AdminPerformanceImageResponseDto;
 import yegam.opale_be.domain.culture.performance.dto.response.admin.AdminPerformanceImageListResponseDto;
+import yegam.opale_be.domain.culture.performance.dto.response.admin.AdminPerformanceVideoListResponseDto;
+import yegam.opale_be.domain.culture.performance.dto.response.admin.AdminPerformanceVideoResponseDto;
 import yegam.opale_be.domain.culture.performance.entity.PerformanceImage;
 import yegam.opale_be.domain.culture.performance.service.AdminPerformanceService;
 import yegam.opale_be.global.response.BaseResponse;
@@ -53,7 +55,6 @@ public class AdminPerformanceController {
     ));
   }
 
-
   // 🎯 3) 공연 수집 이미지 삭제
   @Operation(summary = "공연 수집 이미지 삭제")
   @DeleteMapping("/images/{imageId}")
@@ -81,5 +82,58 @@ public class AdminPerformanceController {
         "Swagger TEST 업로드 성공",
         adminService.uploadImageFile(performanceId, file, imageType, sourceUrl)
     ));
+  }
+
+  // ============================================================
+  // 🎬 4) 공연 유튜브 영상 목록 조회
+  // GET /api/admin/performances/{performanceId}/videos
+  // ============================================================
+  @Operation(summary = "공연 유튜브 영상 목록 조회")
+  @GetMapping("/{performanceId}/videos")
+  public ResponseEntity<BaseResponse<AdminPerformanceVideoListResponseDto>> getVideos(
+      @PathVariable String performanceId
+  ) {
+    return ResponseEntity.ok(BaseResponse.success(
+        "공연 유튜브 영상 조회 성공",
+        adminService.getVideos(performanceId)
+    ));
+  }
+
+  // ============================================================
+  // 🎬 5) 공연 유튜브 영상 등록
+  // POST /api/admin/performances/{performanceId}/videos
+  // ============================================================
+  @Operation(summary = "공연 유튜브 영상 등록")
+  @PostMapping("/{performanceId}/videos")
+  public ResponseEntity<BaseResponse<AdminPerformanceVideoResponseDto>> uploadYoutubeVideo(
+      @PathVariable String performanceId,
+      @RequestParam("youtubeVideoId") String youtubeVideoId,
+      @RequestParam("title") String title,
+      @RequestParam(value = "thumbnailUrl", required = false) String thumbnailUrl,
+      @RequestParam(value = "sourceUrl", required = false) String sourceUrl
+  ) {
+    return ResponseEntity.ok(BaseResponse.success(
+        "공연 유튜브 영상 등록 성공",
+        adminService.uploadYoutubeVideo(
+            performanceId,
+            youtubeVideoId,
+            title,
+            thumbnailUrl,
+            sourceUrl
+        )
+    ));
+  }
+
+  // ============================================================
+  // 🎬 6) 공연 유튜브 영상 삭제
+  // DELETE /api/admin/performances/videos/{videoId}
+  // ============================================================
+  @Operation(summary = "공연 유튜브 영상 삭제")
+  @DeleteMapping("/videos/{videoId}")
+  public ResponseEntity<BaseResponse<Void>> deleteVideo(
+      @PathVariable Long videoId
+  ) {
+    adminService.deleteVideo(videoId);
+    return ResponseEntity.ok(BaseResponse.success("공연 유튜브 영상 삭제 완료", null));
   }
 }
