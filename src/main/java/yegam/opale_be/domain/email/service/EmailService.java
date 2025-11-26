@@ -164,4 +164,61 @@ public class EmailService {
     int code = 100000 + new Random().nextInt(900000);
     return String.valueOf(code);
   }
+
+
+
+  // =============================================
+  // 임시비번 이메일 전송
+  // =============================================
+  public void sendTempPassword(String email, String tempPassword) {
+
+    // 이메일 형식 체크
+    if (email == null || !EMAIL_REGEX.matcher(email).matches()) {
+      throw new CustomException(EmailErrorCode.INVALID_EMAIL_FORMAT);
+    }
+
+    // HTML 내용 생성
+    String subject = "[Opale] 임시 비밀번호 안내";
+
+    String html = buildTempPasswordHtml(tempPassword);
+
+    // 이메일 발송
+    sendHtmlEmail(email, subject, html);
+
+    log.info("임시 비밀번호 이메일 발송 완료: email={}, tempPw={}", email, tempPassword);
+  }
+
+
+  // =============================================
+// 임시 비밀번호 발송 HTML 템플릿
+// =============================================
+  private String buildTempPasswordHtml(String tempPassword) {
+    return """
+      <div style="font-family: 'Pretendard', sans-serif; max-width: 500px; margin: auto; padding: 20px; border-radius: 16px; background: #fefefe; border: 1px solid #ddd;">
+        <h2 style="color: #5C4B99; text-align: center;">🔐 Opale 임시 비밀번호 발급</h2>
+        <p style="font-size: 15px; color: #333;">
+          요청하신 임시 비밀번호가 발급되었습니다.<br>
+          아래 비밀번호로 로그인 후 반드시 새 비밀번호로 변경해주세요.
+        </p>
+
+        <div style="text-align: center; margin: 20px 0;">
+          <span style="display: inline-block; background: #5C4B99; color: white; font-size: 24px; font-weight: bold; padding: 12px 24px; border-radius: 12px;">
+            %s
+          </span>
+        </div>
+
+        <p style="font-size: 13px; color: #666; text-align: center;">
+          보안을 위해 임시 비밀번호는 1회 사용 후 변경하시길 권장드립니다.
+        </p>
+
+        <hr style="border: none; border-top: 1px solid #eee; margin: 25px 0;">
+        <p style="font-size: 13px; color: #999; text-align: center;">
+          © 2025 Opale. 공연 정보 플랫폼
+        </p>
+      </div>
+      """.formatted(tempPassword);
+  }
+
+
+
 }
