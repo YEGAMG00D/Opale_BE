@@ -61,6 +61,9 @@ public class SecurityConfig {
                 "/ws/**"
             ).permitAll()
 
+            // 공연 상세 수집 이미지, 수집 영상
+            .requestMatchers("/api/admin/performances/**").permitAll()
+
             // 임시 비밀번호 발급
             .requestMatchers(HttpMethod.POST, "/api/users/password/reset").permitAll()
 
@@ -117,7 +120,7 @@ public class SecurityConfig {
         )
 
         // JWT 필터 등록
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }
