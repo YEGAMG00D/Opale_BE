@@ -26,6 +26,7 @@ public enum PerformanceErrorCode implements BaseErrorCode {
 
   // 관련 데이터 조회 실패
   PERFORMANCE_RELATION_NOT_FOUND("PERFORMANCE_4006", "해당 공연의 예매처 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+
   PERFORMANCE_VIDEO_NOT_FOUND("PERFORMANCE_4007", "해당 공연의 영상 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
   PERFORMANCE_IMAGE_NOT_FOUND("PERFORMANCE_4008", "해당 공연의 이미지 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
 
