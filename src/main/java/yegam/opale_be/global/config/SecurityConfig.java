@@ -61,6 +61,9 @@ public class SecurityConfig {
                 "/ws/**"
             ).permitAll()
 
+            // 임시 비밀번호 발급
+            .requestMatchers(HttpMethod.POST, "/api/users/password/reset").permitAll()
+
             // 공연 리뷰 공개 엔드포인트 (비로그인 가능)
             .requestMatchers(HttpMethod.GET, "/api/reviews/performances/{reviewId}").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/reviews/performances/performance/**").permitAll()

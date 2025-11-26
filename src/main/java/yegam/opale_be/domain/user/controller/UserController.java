@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import yegam.opale_be.domain.user.dto.request.*;
 import yegam.opale_be.domain.user.dto.response.CheckNicknameResponseDto;
 import yegam.opale_be.domain.user.dto.response.UserResponseDto;
+import yegam.opale_be.domain.user.dto.response.PasswordResetResponseDto;
 import yegam.opale_be.domain.user.service.UserService;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.exception.GlobalErrorCode;
@@ -148,4 +149,20 @@ public class UserController {
     userService.deleteUser(userId, dto);
     return ResponseEntity.ok(BaseResponse.success("회원 탈퇴가 완료되었습니다.", null));
   }
+
+
+  /** 임시 비밀번호 발급 (비밀번호 재설정) */
+  @Operation(summary = "임시 비밀번호 발급", description = "사용자 이메일을 기반으로 임시 비밀번호를 생성하여 기존 비밀번호를 대체합니다.")
+  @PostMapping("/password/reset")
+  public ResponseEntity<BaseResponse<PasswordResetResponseDto>> resetPassword(
+      @RequestBody @Valid PasswordResetRequestDto dto
+  ) {
+    PasswordResetResponseDto response = userService.resetPassword(dto);
+    return ResponseEntity.ok(BaseResponse.success("임시 비밀번호가 발급되었습니다.", response));
+  }
+
+
+
+
+
 }
