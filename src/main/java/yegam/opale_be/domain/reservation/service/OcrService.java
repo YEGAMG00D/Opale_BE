@@ -1,43 +1,61 @@
 package yegam.opale_be.domain.reservation.service;
 
+import java.util.Base64;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import yegam.opale_be.global.exception.CustomException;
-import yegam.opale_be.domain.reservation.exception.ReservationErrorCode;
-import yegam.opale_be.global.openai.OpenAiClient;
 
-import java.util.Base64;
-import java.util.Map;
+import yegam.opale_be.domain.reservation.dto.response.TicketOcrResponseDto;
+import yegam.opale_be.domain.reservation.exception.ReservationErrorCode;
+import yegam.opale_be.global.exception.CustomException;
+import yegam.opale_be.global.google.GoogleVisionOcrClient;
+import yegam.opale_be.global.openai.OpenAiTicketParserService;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class OcrService {
 
-  private final OpenAiClient openAiClient;
+  private final GoogleVisionOcrClient googleVisionOcrClient;
+  private final OpenAiTicketParserService openAiTicketParserService;
 
-  public Map<String, String> extractFromImage(MultipartFile file) {
+  public TicketOcrResponseDto extractFromImage(MultipartFile file) {
+
     try {
-      String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+      /* ============================
+         ✅ 1. Base64 변환
+      ============================ */
+      byte[] bytes = file.getBytes();
+      String base64Image = Base64.getEncoder().encodeToString(bytes);
 
-      String prompt = """
-                다음 공연 티켓 이미지에서 아래 항목을 JSON 형태로 정확하게 반환해줘.
-                - ticketNumber
-                - performanceName
-                - performanceDate (YYYY-MM-DD HH:mm)
-                - seatInfo
-                - placeName
-                
-                JSON만 반환해.
-            """;
+      /* ============================
+         ✅ 2. Google OCR
+      ============================ */
+      String rawText =
+          googleVisionOcrClient.extractTextFromImageBase64(base64Image);
 
-      return openAiClient.requestOcr(prompt, base64);
+      log.info("📑 Google OCR 전체 텍스트:\n{}", rawText);
+
+      if (rawText == null || rawText.isBlank()) {
+        throw new CustomException(ReservationErrorCode.OCR_FAIL);
+      }
+
+      /* ============================
+         ✅ 3. GPT로 티켓 정보 구조화
+      ============================ */
+      TicketOcrResponseDto parsed =
+          openAiTicketParserService.parse(rawText);
+
+      return parsed;
+
+    } catch (CustomException e) {
+      throw e;
 
     } catch (Exception e) {
-      log.error("❌ OCR 처리 실패", e);
-      throw new CustomException(ReservationErrorCode.INVALID_TICKET_DATA);
+      log.error("❌ OCR 전체 처리 실패", e);
+      throw new CustomException(ReservationErrorCode.OCR_FAIL);
     }
   }
 }

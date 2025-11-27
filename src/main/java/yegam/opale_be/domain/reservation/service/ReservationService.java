@@ -57,24 +57,9 @@ public class ReservationService {
 
   /** 티켓 이미지 OCR → 텍스트 추출 */
   public TicketOcrResponseDto extractTicketInfoByOcr(MultipartFile file) {
-    Map<String, String> result = ocrService.extractFromImage(file);
-
-    LocalDateTime performanceDate = null;
-    try {
-      if (result.get("performanceDate") != null) {
-        performanceDate = LocalDateTime.parse(result.get("performanceDate"));
-      }
-    } catch (Exception e) {
-      log.warn("❌ OCR 날짜 파싱 실패: {}", result.get("performanceDate"));
-    }
-
-    return TicketOcrResponseDto.builder()
-        .performanceName(result.get("performanceName"))
-        .performanceDate(performanceDate)
-        .seatInfo(result.get("seatInfo"))
-        .placeName(result.get("placeName"))
-        .build();
+    return ocrService.extractFromImage(file);
   }
+
 
   /** 🔥 티켓 등록 */
   public TicketDetailResponseDto createTicket(Long userId, TicketCreateRequestDto dto) {
@@ -236,5 +221,8 @@ public class ReservationService {
         )
         .build();
   }
+
+
+
 
 }
