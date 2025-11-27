@@ -64,6 +64,12 @@ public class SecurityConfig {
             // 공연 상세 수집 이미지, 수집 영상
             .requestMatchers("/api/admin/performances/**").permitAll()
 
+            // 배너 관련
+            .requestMatchers(
+                "/api/admin/banners/**",
+                "/api/banners/main"
+            ).permitAll()
+            
             // 임시 비밀번호 발급
             .requestMatchers(HttpMethod.POST, "/api/users/password/reset").permitAll()
 
