@@ -67,7 +67,9 @@ public class SecurityConfig {
             // 배너 관련
             .requestMatchers(
                 "/api/admin/banners/**",
-                "/api/banners/main"
+                "/api/banners/main",
+                "/api/main-performance-banners",
+                "/api/admin/main-performance-banners/**"
             ).permitAll()
             
             // 임시 비밀번호 발급
