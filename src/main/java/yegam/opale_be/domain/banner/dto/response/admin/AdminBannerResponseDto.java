@@ -35,6 +35,9 @@ public class AdminBannerResponseDto {
   @Schema(description = "배너 이미지 S3 URL")
   private String imageUrl;
 
+  @Schema(description = "배너 클릭 시 이동할 URL", example = "https://withopale.com/performances/PF264321")
+  private String linkUrl;
+
   @Schema(description = "노출 순서")
   private Integer displayOrder;
 

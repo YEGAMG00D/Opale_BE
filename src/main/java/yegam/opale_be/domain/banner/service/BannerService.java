@@ -11,6 +11,8 @@ import yegam.opale_be.domain.banner.entity.MainBanner;
 import yegam.opale_be.domain.banner.exception.BannerErrorCode;
 import yegam.opale_be.domain.banner.mapper.BannerMapper;
 import yegam.opale_be.domain.banner.repository.BannerRepository;
+import yegam.opale_be.domain.culture.performance.entity.Performance;
+import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.storage.FileStorageService;
 
@@ -25,12 +27,29 @@ public class BannerService {
   private final BannerRepository bannerRepository;
   private final BannerMapper bannerMapper;
   private final FileStorageService fileStorageService;
+  private final PerformanceRepository performanceRepository; // ✅ 추가 주입
 
-  /** ✅ 배너 등록 */
+  /** ✅ 배너 등록 (파일 / 공연 포스터 자동 분기) */
   @Transactional
   public AdminBannerResponseDto createBanner(AdminBannerRequestDto dto, MultipartFile file) {
 
-    String imageUrl = fileStorageService.saveFileAndReturnUrl(file, "banners");
+    String imageUrl = null;
+
+    // ✅ 1. 파일이 있으면 → S3 업로드
+    if (file != null && !file.isEmpty()) {
+      imageUrl = fileStorageService.saveFileAndReturnUrl(file, "banners");
+    }
+    // ✅ 2. 파일 없고 공연 ID 있으면 → 공연 포스터 자동 사용
+    else if (dto.getPerformanceId() != null && !dto.getPerformanceId().isBlank()) {
+      Performance performance = performanceRepository.findById(dto.getPerformanceId())
+          .orElseThrow(() -> new CustomException(BannerErrorCode.BANNER_DATA_ERROR));
+
+      imageUrl = performance.getPoster();
+    }
+    // ✅ 3. 둘 다 없으면 에러
+    else {
+      throw new CustomException(BannerErrorCode.BANNER_DATA_ERROR);
+    }
 
     MainBanner banner = bannerMapper.toEntity(dto, imageUrl);
     MainBanner saved = bannerRepository.save(banner);
@@ -49,13 +68,13 @@ public class BannerService {
     MainBanner banner = bannerRepository.findById(bannerId)
         .orElseThrow(() -> new CustomException(BannerErrorCode.BANNER_NOT_FOUND));
 
-    // ✅ 이미지 교체
+    // ✅ 이미지 교체 (파일이 있을 때만)
     if (file != null && !file.isEmpty()) {
       String imageUrl = fileStorageService.saveFileAndReturnUrl(file, "banners");
       banner.setImageUrl(imageUrl);
     }
 
-    // ✅ 텍스트 필드들 (엔티티 필드명 기준)
+    // ✅ 텍스트 필드 갱신
     banner.setPerformanceId(dto.getPerformanceId());
     banner.setTitleText(dto.getTitleText());
     banner.setSubtitleText(dto.getSubtitleText());
@@ -71,11 +90,9 @@ public class BannerService {
   /** ✅ 배너 삭제 */
   @Transactional
   public void deleteBanner(Long bannerId) {
-
     if (!bannerRepository.existsById(bannerId)) {
       throw new CustomException(BannerErrorCode.BANNER_NOT_FOUND);
     }
-
     bannerRepository.deleteById(bannerId);
   }
 
