@@ -72,6 +72,11 @@ dependencies {
     // Redis
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
+    // Elasticsearch (Spring Data + Java Client 8.13.0)
+    implementation 'org.springframework.boot:spring-boot-starter-data-elasticsearch'
+    implementation 'co.elastic.clients:elasticsearch-java:8.13.0'
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
 
 
 }
@@ -79,3 +84,10 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+
+configurations.all {
+    exclude group: "org.apache.logging.log4j", module: "log4j-to-slf4j"
+}
+
+
