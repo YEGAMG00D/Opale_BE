@@ -21,6 +21,9 @@ public interface FavoritePlaceReviewRepository extends JpaRepository<FavoritePla
       "WHERE fpr.user.userId = :userId AND fpr.isLiked = true")
   List<PlaceReview> findLikedPlaceReviewsByUserId(Long userId);
 
+  // ✅ 마이페이지용 (Favorite 기준)
+  List<FavoritePlaceReview> findByUser_UserIdAndIsLikedTrue(Long userId);
+
   /** 목록/상세 하트 표시용: 좋아요한 placeReviewId 목록 */
   @Query("SELECT fpr.placeReview.placeReviewId FROM FavoritePlaceReview fpr " +
       "WHERE fpr.user.userId = :userId AND fpr.isLiked = true")

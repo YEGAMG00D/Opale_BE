@@ -3,6 +3,7 @@ package yegam.opale_be.domain.favorite.review.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 import java.time.LocalDateTime;
+import yegam.opale_be.domain.review.common.ReviewType;
 
 /**
  * 공연장 리뷰 관심 단건 응답 DTO
@@ -18,7 +19,6 @@ public class FavoritePlaceReviewResponseDto {
   @Schema(description = "리뷰 ID", example = "32")
   private Long placeReviewId;
 
-  // ✅ 추가됨
   @Schema(description = "공연장 ID", example = "PL12345")
   private String placeId;
 
@@ -42,4 +42,8 @@ public class FavoritePlaceReviewResponseDto {
 
   @Schema(description = "관심 여부", example = "true")
   private Boolean isLiked;
+
+  @Schema(description = "리뷰 타입", example = "AFTER")
+  private ReviewType reviewType;
+
 }
