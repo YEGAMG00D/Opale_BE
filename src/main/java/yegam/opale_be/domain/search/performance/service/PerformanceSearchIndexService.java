@@ -72,18 +72,39 @@ public class PerformanceSearchIndexService {
     searchRepository.saveAll(docs);
   }
 
-  /** ✅ 오타 허용 + 부분 검색 (fuzzy + multi match) */
+
+  /** ✅ 오타 허용 + 부분 검색 + 정확도 순 정렬 */
   @Transactional(readOnly = true)
   public List<PerformanceSearchDocument> search(String keyword) {
 
     NativeQuery query = NativeQuery.builder()
         .withQuery(q -> q
-            .multiMatch(m -> m
-                .query(keyword)
-                .fields("title", "aiSummary", "aiKeywords")
-                .fuzziness("AUTO")
+            .bool(b -> b
+                .should(s -> s
+                    .matchPhrasePrefix(m -> m
+                        .field("title")
+                        .query(keyword)
+                        .boost(3.0f)   // 가장 중요한 정확 매칭
+                    )
+                )
+                .should(s -> s
+                    .prefix(p -> p
+                        .field("title")
+                        .value(keyword)
+                        .boost(2.0f)
+                    )
+                )
+                .should(s -> s
+                    .match(m -> m
+                        .field("title")
+                        .query(keyword)
+                        .fuzziness("AUTO")
+                        .boost(1.0f)
+                    )
+                )
             )
         )
+        .withMaxResults(20)
         .build();
 
     SearchHits<PerformanceSearchDocument> hits =
@@ -95,25 +116,36 @@ public class PerformanceSearchIndexService {
         .toList();
   }
 
-
-  /** ✅ 자동완성 (title prefix 기반 - Suggester 미사용, 네 버전 호환) */
+  /** ✅ 자동완성 (정확도 기반 정렬 완전 적용) */
   @Transactional(readOnly = true)
   public List<PerformanceAutoCompleteResponseDto> autoComplete(String keyword) {
 
     NativeQuery query = NativeQuery.builder()
         .withQuery(q -> q
             .bool(b -> b
+                // 1순위: 정확한 앞단어 일치
+                .should(s -> s
+                    .matchPhrasePrefix(m -> m
+                        .field("title")
+                        .query(keyword)
+                        .boost(5.0f)
+                    )
+                )
+                // 2순위: prefix
                 .should(s -> s
                     .prefix(p -> p
                         .field("title")
                         .value(keyword)
+                        .boost(3.0f)
                     )
                 )
+                // 3순위: 오타 허용
                 .should(s -> s
-                    .multiMatch(m -> m
+                    .match(m -> m
+                        .field("title")
                         .query(keyword)
-                        .fields("title")
                         .fuzziness("AUTO")
+                        .boost(1.0f)
                     )
                 )
             )
@@ -132,8 +164,6 @@ public class PerformanceSearchIndexService {
         ))
         .toList();
   }
-
-
 
 
 
