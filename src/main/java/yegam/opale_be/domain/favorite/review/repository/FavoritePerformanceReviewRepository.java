@@ -21,6 +21,10 @@ public interface FavoritePerformanceReviewRepository extends JpaRepository<Favor
       "WHERE fpr.user.userId = :userId AND fpr.isLiked = true")
   List<PerformanceReview> findLikedPerformanceReviewsByUserId(Long userId);
 
+  // ✅ 마이페이지용 (Favorite 기준)
+  List<FavoritePerformanceReview> findByUser_UserIdAndIsLikedTrue(Long userId);
+
+
   /** 목록/상세 하트 표시용: 좋아요한 performanceReviewId 목록 */
   @Query("SELECT fpr.performanceReview.performanceReviewId FROM FavoritePerformanceReview fpr " +
       "WHERE fpr.user.userId = :userId AND fpr.isLiked = true")
