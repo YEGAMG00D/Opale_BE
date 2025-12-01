@@ -166,5 +166,50 @@ public class PerformanceSearchIndexService {
   }
 
 
+  /** ✅ 정확도 순 performanceId 리스트 반환 (ES 전용) */
+  @Transactional(readOnly = true)
+  public List<String> searchIdsByAccuracy(String keyword) {
+
+    NativeQuery query = NativeQuery.builder()
+        .withQuery(q -> q
+            .bool(b -> b
+                .should(s -> s
+                    .matchPhrasePrefix(m -> m
+                        .field("title")
+                        .query(keyword)
+                        .boost(5.0f)
+                    )
+                )
+                .should(s -> s
+                    .prefix(p -> p
+                        .field("title")
+                        .value(keyword)
+                        .boost(3.0f)
+                    )
+                )
+                .should(s -> s
+                    .match(m -> m
+                        .field("title")
+                        .query(keyword)
+                        .fuzziness("AUTO")
+                        .boost(1.0f)
+                    )
+                )
+            )
+        )
+        .withMaxResults(100)   // 필요한 만큼
+        .build();
+
+    SearchHits<PerformanceSearchDocument> hits =
+        elasticsearchOperations.search(query, PerformanceSearchDocument.class);
+
+    // ✅ ES score 순서 그대로 ID만 추출
+    return hits.getSearchHits()
+        .stream()
+        .map(hit -> hit.getContent().getPerformanceId())
+        .toList();
+  }
+
+
 
 }
