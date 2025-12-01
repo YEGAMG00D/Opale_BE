@@ -21,7 +21,10 @@ public enum UserErrorCode implements BaseErrorCode {
   REFRESH_TOKEN_MISMATCH("USER_4008", "유효하지 않은 Refresh Token입니다.", HttpStatus.UNAUTHORIZED),
 
 
-  DUPLICATE_NICKNAME("USER_4009", "이미 사용 중인 닉네임입니다.", HttpStatus.CONFLICT);
+  DUPLICATE_NICKNAME("USER_4009", "이미 사용 중인 닉네임입니다.", HttpStatus.CONFLICT),
+
+  EMAIL_NOT_VERIFIED("USER_4010", "이메일 인증이 완료되지 않았습니다.", HttpStatus.BAD_REQUEST);
+
 
   private final String code;
   private final String message;
