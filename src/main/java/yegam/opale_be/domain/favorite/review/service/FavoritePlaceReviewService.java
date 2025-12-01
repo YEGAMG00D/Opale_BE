@@ -29,7 +29,7 @@ public class FavoritePlaceReviewService {
   private final UserRepository userRepository;
   private final FavoritePlaceReviewMapper favoritePlaceReviewMapper;
 
-  // 1️⃣ 토글
+  // 1️⃣ 토글 (✅ 그대로)
   public boolean toggleFavorite(Long userId, Long placeReviewId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
@@ -57,7 +57,7 @@ public class FavoritePlaceReviewService {
     return favorite.getIsLiked();
   }
 
-  // 2️⃣ 단건 관심 여부
+  // 2️⃣ 단건 관심 여부 (✅ 그대로)
   @Transactional(readOnly = true)
   public boolean isLiked(Long userId, Long reviewId) {
     if (userId == null) return false;
@@ -65,24 +65,24 @@ public class FavoritePlaceReviewService {
         .existsByUser_UserIdAndPlaceReview_PlaceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (비로그인 → 빈 배열)
+  // 3️⃣ ID 리스트 (✅ 그대로)
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePlaceReviewRepository.findPlaceReviewIdsByUserId(userId);
   }
 
-  // 4️⃣ 마이페이지 상세 목록 (빈 배열 반환)
+  // ✅ 4️⃣ 마이페이지 상세 목록 (🔥 여기만 수정)
   @Transactional(readOnly = true)
   public List<FavoritePlaceReviewResponseDto> getFavoriteReviews(Long userId) {
     userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
-    List<PlaceReview> likedReviews =
-        favoritePlaceReviewRepository.findLikedPlaceReviewsByUserId(userId);
+    List<FavoritePlaceReview> likedFavorites =
+        favoritePlaceReviewRepository.findByUser_UserIdAndIsLikedTrue(userId);
 
-    if (likedReviews.isEmpty()) return List.of();
+    if (likedFavorites.isEmpty()) return List.of();
 
-    return favoritePlaceReviewMapper.toResponseDtoList(likedReviews);
+    return favoritePlaceReviewMapper.toResponseDtoList(likedFavorites);
   }
 }

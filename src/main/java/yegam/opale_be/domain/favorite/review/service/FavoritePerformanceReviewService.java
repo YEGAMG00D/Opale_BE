@@ -29,7 +29,7 @@ public class FavoritePerformanceReviewService {
   private final UserRepository userRepository;
   private final FavoritePerformanceReviewMapper favoritePerformanceReviewMapper;
 
-  // 1️⃣ 토글
+  // 1️⃣ 토글 (✅ 기존 그대로)
   public boolean toggleFavorite(Long userId, Long performanceReviewId) {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
@@ -57,7 +57,7 @@ public class FavoritePerformanceReviewService {
     return favorite.getIsLiked();
   }
 
-  // 2️⃣ 단건 관심 여부
+  // 2️⃣ 단건 관심 여부 (✅ 그대로)
   @Transactional(readOnly = true)
   public boolean isLiked(Long userId, Long reviewId) {
     if (userId == null) return false;
@@ -65,25 +65,25 @@ public class FavoritePerformanceReviewService {
         .existsByUser_UserIdAndPerformanceReview_PerformanceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (비로그인 → 빈 배열)
+  // 3️⃣ ID 리스트 (✅ 그대로)
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePerformanceReviewRepository.findPerformanceReviewIdsByUserId(userId);
   }
 
-  // 4️⃣ 마이페이지 상세 목록 (빈 배열 반환)
+  // ✅ 4️⃣ 마이페이지 상세 목록 (🔥 여기만 수정)
   @Transactional(readOnly = true)
   public List<FavoritePerformanceReviewResponseDto> getFavoriteReviews(Long userId) {
     userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
-    List<PerformanceReview> likedReviews =
-        favoritePerformanceReviewRepository.findLikedPerformanceReviewsByUserId(userId);
+    // ✅ Favorite 엔티티로 직접 조회
+    List<FavoritePerformanceReview> likedFavorites =
+        favoritePerformanceReviewRepository.findByUser_UserIdAndIsLikedTrue(userId);
 
-    if (likedReviews.isEmpty()) return List.of();
+    if (likedFavorites.isEmpty()) return List.of();
 
-    // ✅ Mapper 변환으로 일관성 있게 처리
-    return favoritePerformanceReviewMapper.toResponseDtoList(likedReviews);
+    return favoritePerformanceReviewMapper.toResponseDtoList(likedFavorites);
   }
 }

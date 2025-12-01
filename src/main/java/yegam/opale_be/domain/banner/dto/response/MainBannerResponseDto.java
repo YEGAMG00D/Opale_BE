@@ -34,4 +34,7 @@ public class MainBannerResponseDto {
 
   @Schema(description = "공연 장소 텍스트", example = "BLUESQUARE 신한카드홀")
   private String placeText;
+
+  @Schema(description = "배너 클릭 시 이동할 URL", example = "https://withopale.com/performances/PF264321")
+  private String linkUrl;
 }

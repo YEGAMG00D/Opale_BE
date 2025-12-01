@@ -21,7 +21,7 @@ public class BannerMapper {
         .placeText(dto.getPlaceText())
         .displayOrder(dto.getDisplayOrder())
         .isActive(dto.getIsActive())
-        .linkUrl(dto.getLinkUrl())   // ✅ 여기 정상
+        .linkUrl(dto.getLinkUrl())
         .build();
   }
 
@@ -36,6 +36,7 @@ public class BannerMapper {
         .descriptionText(banner.getDescriptionText())
         .dateText(banner.getDateText())
         .placeText(banner.getPlaceText())
+        .linkUrl(banner.getLinkUrl())
         .displayOrder(banner.getDisplayOrder())
         .isActive(banner.getIsActive())
         .build();
@@ -52,6 +53,7 @@ public class BannerMapper {
         .descriptionText(banner.getDescriptionText())
         .dateText(banner.getDateText())
         .placeText(banner.getPlaceText())
+        .linkUrl(banner.getLinkUrl())
         .build();
   }
 }

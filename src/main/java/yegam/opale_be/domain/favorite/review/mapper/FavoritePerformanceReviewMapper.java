@@ -2,49 +2,53 @@ package yegam.opale_be.domain.favorite.review.mapper;
 
 import org.springframework.stereotype.Component;
 import yegam.opale_be.domain.favorite.review.dto.response.FavoritePerformanceReviewResponseDto;
-import yegam.opale_be.domain.review.performance.entity.PerformanceReview;
+import yegam.opale_be.domain.favorite.review.entity.FavoritePerformanceReview;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * 공연 리뷰 관심 Mapper
- * - Entity ↔ DTO 변환 전담
- */
 @Component
 public class FavoritePerformanceReviewMapper {
 
-  /** 공연 리뷰 Entity → 관심 Response DTO */
-  public FavoritePerformanceReviewResponseDto toResponseDto(PerformanceReview entity, boolean isLiked) {
-    if (entity == null) return null;
+  /** 관심 엔티티 → 관심 DTO */
+  public FavoritePerformanceReviewResponseDto toResponseDto(FavoritePerformanceReview favorite, boolean isLiked) {
+    if (favorite == null) return null;
 
-    // ✅ 공연 정보가 null일 수도 있으므로 안전하게 처리
+    var review = favorite.getPerformanceReview();
+
     String performanceId = null;
     String performanceTitle = null;
-    if (entity.getPerformance() != null) {
-      performanceId = entity.getPerformance().getPerformanceId();
-      performanceTitle = entity.getPerformance().getTitle();
+
+    if (review.getPerformance() != null) {
+      performanceId = review.getPerformance().getPerformanceId();
+      performanceTitle = review.getPerformance().getTitle();
     }
 
     return FavoritePerformanceReviewResponseDto.builder()
-        .performanceReviewId(entity.getPerformanceReviewId())
+        .performanceReviewId(review.getPerformanceReviewId())
         .performanceId(performanceId)
         .performanceTitle(performanceTitle)
-        .title(entity.getTitle())
-        .contents(entity.getContents())
-        .rating(entity.getRating())
-        .nickname(entity.getUser() != null ? entity.getUser().getNickname() : null)
-        .createdAt(entity.getCreatedAt())
+
+        .title(review.getTitle())
+        .contents(review.getContents())
+        .rating(review.getRating())
+
+        .nickname(review.getUser() != null ? review.getUser().getNickname() : null)
+        .createdAt(review.getCreatedAt())
+
         .isLiked(isLiked)
+        .reviewType(review.getReviewType())
+
         .build();
   }
 
-  /** 공연 리뷰 Entity List → 관심 DTO List */
-  public List<FavoritePerformanceReviewResponseDto> toResponseDtoList(List<PerformanceReview> entities) {
-    if (entities == null || entities.isEmpty()) return Collections.emptyList();
-    return entities.stream()
-        .map(e -> toResponseDto(e, true)) // 관심 목록이므로 isLiked=true
+  /** 관심 목록 List → DTO List */
+  public List<FavoritePerformanceReviewResponseDto> toResponseDtoList(List<FavoritePerformanceReview> favorites) {
+    if (favorites == null || favorites.isEmpty()) return Collections.emptyList();
+
+    return favorites.stream()
+        .map(f -> toResponseDto(f, true))
         .collect(Collectors.toList());
   }
 }
