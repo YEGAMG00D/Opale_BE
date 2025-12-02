@@ -40,6 +40,11 @@ public class UserService {
   @Transactional
   public UserResponseDto signUp(UserSignUpRequestDto dto) {
 
+    // ✅ 이메일 인증 여부 확인 (Redis)
+    if (!emailService.isVerifiedForSignUp(dto.getEmail())) {
+      throw new CustomException(UserErrorCode.EMAIL_NOT_VERIFIED);
+    }
+
     // 중복 체크
     if (userRepository.existsByEmail(dto.getEmail())) {
       throw new CustomException(UserErrorCode.DUPLICATE_EMAIL);
@@ -63,22 +68,26 @@ public class UserService {
         .isDeleted(false)
         .build();
 
-    userRepository.save(user);   // 여기서 userId가 생성됨
+    userRepository.save(user);
 
     log.info("회원가입 완료: userId={}, email={}", user.getUserId(), user.getEmail());
 
-    // 2) 선호 벡터 자동 생성 (MapsId 구조)
+    // 인증 기록 삭제
+    emailService.clearVerifiedEmail(dto.getEmail());
+
+    // 2) 선호 벡터 생성
     UserPreferenceVector vector = UserPreferenceVector.builder()
-        .user(user)                     // ⭐ PK 자동 매핑됨
-        .embeddingVector(zeroVectorUtil.generateZeroVectorJson())  // 초기 0벡터
+        .user(user)
+        .embeddingVector(zeroVectorUtil.generateZeroVectorJson())
         .build();
 
     vectorRepository.save(vector);
 
-    log.info("⭐ 신규 유저 벡터 초기화 완료: userId={}", user.getUserId());
+    log.info("신규 유저 벡터 초기화 완료: userId={}", user.getUserId());
 
     return userMapper.toUserResponseDto(user);
   }
+
 
 
 

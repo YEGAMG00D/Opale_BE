@@ -15,8 +15,14 @@ import yegam.opale_be.domain.culture.performance.mapper.PerformanceMapper;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.domain.review.common.ReviewType;
 import yegam.opale_be.domain.review.performance.repository.PerformanceReviewRepository;
+import yegam.opale_be.domain.search.performance.service.PerformanceSearchIndexService;
 import yegam.opale_be.global.common.BasePerformanceListResponseDto;
 import yegam.opale_be.global.exception.CustomException;
+
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Comparator;
+
 
 import java.time.LocalDate;
 import java.util.List;
@@ -33,6 +39,8 @@ public class PerformanceService {
 
   private final PerformanceReviewRepository performanceReviewRepository;
 
+  private final PerformanceSearchIndexService performanceSearchIndexService;
+
   // ---------------------------------------------------------------------
   // 공연 목록 용
   // ---------------------------------------------------------------------
@@ -43,12 +51,57 @@ public class PerformanceService {
     String genre = emptyToNull(dto.getGenre());
     String keyword = emptyToNull(dto.getKeyword());
     String area = emptyToNull(dto.getArea());
-    String sortType = (dto.getSortType() == null || dto.getSortType().isBlank()) ? "최신" : dto.getSortType();
+    String sortType =
+        (dto.getSortType() == null || dto.getSortType().isBlank()) ? "최신" : dto.getSortType();
 
     int page = (dto.getPage() != null && dto.getPage() > 0) ? dto.getPage() - 1 : 0;
     int size = (dto.getSize() != null && dto.getSize() > 0) ? dto.getSize() : 20;
     PageRequest pageable = PageRequest.of(page, size);
 
+    // ✅ ✅ ✅ ✅ ✅ ES 정확도 정렬 분기 (keyword 있을 때만)
+    if (keyword != null) {
+
+      // 1️⃣ ES에서 정확도 순 ID 조회
+      List<String> esIds =
+          performanceSearchIndexService.searchIdsByAccuracy(keyword);
+
+      if (esIds.isEmpty()) {
+        return performanceMapper.toPerformanceListDtoWithReviewCount(
+            List.of(),
+            performanceReviewRepository
+        );
+      }
+
+      // 2️⃣ MySQL에서 ID 목록 기반 조회
+      List<Performance> performances =
+          performanceRepository.findByPerformanceIdIn(esIds);
+
+      // 3️⃣ ES 순서 유지 정렬
+      Map<String, Integer> orderMap = new HashMap<>();
+      for (int i = 0; i < esIds.size(); i++) {
+        orderMap.put(esIds.get(i), i);
+      }
+
+      performances.sort(
+          Comparator.comparingInt(p ->
+              orderMap.getOrDefault(p.getPerformanceId(), Integer.MAX_VALUE)
+          )
+      );
+
+      // 4️⃣ 기존 genre / area 필터 유지
+      performances = performances.stream()
+          .filter(p -> genre == null || genre.equals(p.getGenrenm()))
+          .filter(p -> area == null || area.equals(p.getArea()))
+          .toList();
+
+      // 5️⃣ 기존 Mapper 그대로 사용
+      return performanceMapper.toPerformanceListDtoWithReviewCount(
+          performances,
+          performanceReviewRepository
+      );
+    }
+
+    // ✅ ✅ ✅ ✅ ✅ 기존 MySQL 검색 로직 그대로 유지
     Page<Performance> performancePage =
         performanceRepository.search(genre, keyword, area, sortType, pageable);
 
@@ -58,15 +111,6 @@ public class PerformanceService {
     );
   }
 
-  /** 인기 공연 조회 */
-  public PerformanceListResponseDto getTopPerformances() {
-    List<Performance> performances = performanceRepository.findTop10ByOrderByUpdatedateDesc();
-
-    return performanceMapper.toPerformanceListDtoWithReviewCount(
-        performances,
-        performanceReviewRepository
-    );
-  }
 
   /** 오늘 공연 조회 */
   public PerformanceListResponseDto getTodayPerformances(String type) {
@@ -169,4 +213,18 @@ public class PerformanceService {
   private String emptyToNull(String s) {
     return (s == null || s.isBlank()) ? null : s;
   }
+
+  /** 인기 공연 조회 */
+  public PerformanceListResponseDto getTopPerformances() {
+    List<Performance> performances =
+        performanceRepository.findTop10ByOrderByUpdatedateDesc();
+
+    return performanceMapper.toPerformanceListDtoWithReviewCount(
+        performances,
+        performanceReviewRepository
+    );
+  }
+
+
+
 }

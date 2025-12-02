@@ -2,6 +2,7 @@ package yegam.opale_be.domain.user.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -9,11 +10,9 @@ import yegam.opale_be.domain.user.dto.request.LoginRequestDto;
 import yegam.opale_be.domain.user.dto.response.LoginResponseDto;
 import yegam.opale_be.domain.user.dto.response.UserResponseDto;
 import yegam.opale_be.domain.user.entity.User;
-import yegam.opale_be.domain.user.entity.UserToken;
 import yegam.opale_be.domain.user.exception.UserErrorCode;
 import yegam.opale_be.domain.user.mapper.UserMapper;
 import yegam.opale_be.domain.user.repository.UserRepository;
-import yegam.opale_be.domain.user.repository.UserTokenRepository;
 import yegam.opale_be.global.exception.CustomException;
 import yegam.opale_be.global.jwt.JwtProvider;
 import yegam.opale_be.global.jwt.TokenResponse;
@@ -21,6 +20,7 @@ import yegam.opale_be.global.jwt.TokenResponse;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @RequiredArgsConstructor
@@ -30,11 +30,13 @@ public class AuthService {
 
   private final JwtProvider jwtProvider;
   private final UserRepository userRepository;
-  private final UserTokenRepository userTokenRepository;
   private final PasswordEncoder passwordEncoder;
   private final UserMapper userMapper;
+  private final StringRedisTemplate redisTemplate;   // ✅ Redis 사용
 
   private final Set<String> blacklistedTokens = new HashSet<>();
+
+  private static final String REFRESH_TOKEN_KEY_PREFIX = "refresh:token:";
 
   /** ✅ 로그인 */
   public LoginResponseDto login(LoginRequestDto dto) {
@@ -48,12 +50,9 @@ public class AuthService {
     String accessToken = jwtProvider.createAccessToken(user.getUserId(), user.getEmail(), user.getRole().name());
     String refreshToken = jwtProvider.createRefreshToken(user.getUserId());
 
-    userTokenRepository.save(UserToken.builder()
-        .userId(user.getUserId())
-        .refreshToken(refreshToken)
-        .issuedAt(LocalDateTime.now())
-        .expiresAt(LocalDateTime.now().plusDays(7))
-        .build());
+    // ✅ RefreshToken → Redis 저장 (DB 대신)
+    String redisKey = REFRESH_TOKEN_KEY_PREFIX + user.getUserId();
+    redisTemplate.opsForValue().set(redisKey, refreshToken, 7, TimeUnit.DAYS);
 
     log.info("✅ 로그인 성공: userId={}, email={}", user.getUserId(), user.getEmail());
 
@@ -86,10 +85,15 @@ public class AuthService {
       throw new CustomException(UserErrorCode.JWT_INVALID);
     }
 
-    UserToken savedToken = userTokenRepository.findById(userId)
-        .orElseThrow(() -> new CustomException(UserErrorCode.REFRESH_TOKEN_NOT_FOUND));
+    // ✅ Redis에서 RefreshToken 조회
+    String redisKey = REFRESH_TOKEN_KEY_PREFIX + userId;
+    String savedToken = redisTemplate.opsForValue().get(redisKey);
 
-    if (!refreshToken.equals(savedToken.getRefreshToken())) {
+    if (savedToken == null) {
+      throw new CustomException(UserErrorCode.REFRESH_TOKEN_NOT_FOUND);
+    }
+
+    if (!refreshToken.equals(savedToken)) {
       throw new CustomException(UserErrorCode.REFRESH_TOKEN_MISMATCH);
     }
 
@@ -99,10 +103,8 @@ public class AuthService {
     String newAccessToken = jwtProvider.createAccessToken(userId, user.getEmail(), user.getRole().name());
     String newRefreshToken = jwtProvider.createRefreshToken(userId);
 
-    savedToken.setRefreshToken(newRefreshToken);
-    savedToken.setIssuedAt(LocalDateTime.now());
-    savedToken.setExpiresAt(LocalDateTime.now().plusDays(7));
-    userTokenRepository.save(savedToken);
+    // ✅ Redis RefreshToken 갱신
+    redisTemplate.opsForValue().set(redisKey, newRefreshToken, 7, TimeUnit.DAYS);
 
     log.info("♻️ AccessToken & RefreshToken 재발급 완료: userId={}", userId);
 
@@ -118,7 +120,10 @@ public class AuthService {
       throw new CustomException(UserErrorCode.JWT_INVALID);
     }
 
-    userTokenRepository.findById(userId).ifPresent(userTokenRepository::delete);
+    // ✅ Redis에서 RefreshToken 삭제
+    String redisKey = REFRESH_TOKEN_KEY_PREFIX + userId;
+    redisTemplate.delete(redisKey);
+
     log.info("🚪 로그아웃 완료: userId={} (RefreshToken 삭제)", userId);
   }
 
