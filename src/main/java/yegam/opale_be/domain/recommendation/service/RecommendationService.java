@@ -3,8 +3,14 @@ package yegam.opale_be.domain.recommendation.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import yegam.opale_be.domain.analytics.entity.UserEventLog;
 import yegam.opale_be.domain.analytics.repository.UserEventLogRepository;
 import yegam.opale_be.domain.chat.room.entity.ChatRoom;
@@ -26,6 +32,7 @@ import yegam.opale_be.domain.recommendation.util.PineconeMatch;
 import yegam.opale_be.global.exception.CustomException;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,12 +47,22 @@ public class RecommendationService {
   private final ChatRoomRepository chatRoomRepository;
   private final UserEventLogRepository userEventLogRepository;
 
-
   private final RecommendationMapper recommendationMapper;
   private final EmbeddingVectorUtil embeddingVectorUtil;
   private final PineconeClientUtil pineconeClientUtil;
+  private final ZeroVectorUtil zeroVectorUtil;
 
-  private final ZeroVectorUtil zeroVectorUtil; // ⭐ cold-start helper
+  /** ✅ Redis */
+  private final StringRedisTemplate redisTemplate;
+
+  /** ✅ LocalDate 직렬화 대응 */
+  private final ObjectMapper objectMapper = new ObjectMapper()
+      .registerModule(new JavaTimeModule())
+      .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+  private static final long POPULAR_CACHE_TTL_MINUTES = 30;
+  private static final String POPULAR_CACHE_KEY = "recommendation:popular";
+  private static final String GENRE_CACHE_KEY_PREFIX = "recommendation:genre:";
 
   // ================================
   // common helpers
@@ -96,19 +113,11 @@ public class RecommendationService {
       dtoList.add(recommendationMapper.toPerformance(p, score));
     }
 
-    switch (normalizedSort) {
-      case "latest" ->
-          dtoList.sort(Comparator.comparing(
-              (RecommendedPerformanceDto d) -> d.getStartDate(),
-              Comparator.nullsLast(Comparator.naturalOrder())
-          ).reversed());
-
-      case "popularity" ->
-          dtoList.sort(Comparator.comparing(
-              (RecommendedPerformanceDto d) -> d.getRating() != null ? d.getRating() : 0.0
-          ).reversed());
-
-      // similarity / auto → Pinecone score 유지
+    if ("latest".equals(normalizedSort)) {
+      dtoList.sort(Comparator.comparing(
+          (RecommendedPerformanceDto d) -> d.getStartDate(),
+          Comparator.nullsLast(Comparator.naturalOrder())
+      ).reversed());
     }
 
     return RecommendationPerformanceListResponseDto.builder()
@@ -120,37 +129,17 @@ public class RecommendationService {
   }
 
   // ================================
-  // 1) Personalized Recommendation
-  // ================================
-  @Transactional  // ⭐ save 안 하지만 read-only false (future safe)
-  public RecommendationPerformanceListResponseDto getUserRecommendations(Long userId, Integer size, String sort) {
-
-    UserPreferenceVector vec = preferenceRepository.findById(userId).orElse(null);
-
-    List<Double> vector;
-    if (vec == null) {
-      // ⭐ 벡터 없으면 Zero Vector 사용
-      vector = zeroVectorUtil.generateZeroVector();
-      log.info("⭐ Cold-start user → zero vector 사용 (userId={})", userId);
-    } else {
-      vector = embeddingVectorUtil.parseToList(vec.getEmbeddingVector());
-    }
-
-    return buildVectorBasedRecommendation(vector, size, sort);
-  }
-
-  // ================================
-  // 2) Personalized (Admin Tool)
+  // 1) 개인화 추천 (✅ Controller와 일치)
   // ================================
   @Transactional
-  public RecommendationPerformanceListResponseDto getUserRecommendationsByAdmin(Long userId, Integer size, String sort) {
-
+  public RecommendationPerformanceListResponseDto getUserRecommendations(
+      Long userId, Integer size, String sort
+  ) {
     UserPreferenceVector vec = preferenceRepository.findById(userId).orElse(null);
 
     List<Double> vector;
     if (vec == null) {
       vector = zeroVectorUtil.generateZeroVector();
-      log.info("⭐ Admin cold-start user → zero vector 사용 (userId={})", userId);
     } else {
       vector = embeddingVectorUtil.parseToList(vec.getEmbeddingVector());
     }
@@ -159,10 +148,20 @@ public class RecommendationService {
   }
 
   // ================================
-  // 3) Similarity
+  // 2) 운영자용 개인화 추천
   // ================================
-  public RecommendationPerformanceListResponseDto getSimilarPerformances(String performanceId, Integer size, String sort) {
+  public RecommendationPerformanceListResponseDto getUserRecommendationsByAdmin(
+      Long userId, Integer size, String sort
+  ) {
+    return getUserRecommendations(userId, size, sort);
+  }
 
+  // ================================
+  // 3) 유사 공연
+  // ================================
+  public RecommendationPerformanceListResponseDto getSimilarPerformances(
+      String performanceId, Integer size, String sort
+  ) {
     Performance p = performanceRepository.findById(performanceId)
         .orElseThrow(() -> new CustomException(PerformanceErrorCode.PERFORMANCE_NOT_FOUND));
 
@@ -171,9 +170,9 @@ public class RecommendationService {
     }
 
     List<Double> vector = embeddingVectorUtil.parseToList(p.getEmbeddingVector());
-    RecommendationPerformanceListResponseDto result = buildVectorBasedRecommendation(vector, size, sort);
+    RecommendationPerformanceListResponseDto result =
+        buildVectorBasedRecommendation(vector, size, sort);
 
-    // 동일 공연 제외
     List<RecommendedPerformanceDto> filtered = result.getRecommendations().stream()
         .filter(dto -> !performanceId.equals(dto.getPerformanceId()))
         .toList();
@@ -184,39 +183,69 @@ public class RecommendationService {
   }
 
   // ================================
-  // 4) Genre
+  // 4) 장르 기반 추천 (✅ Redis)
   // ================================
-  public RecommendationPerformanceListResponseDto getGenreRecommendations(String genre, Integer size, String sort) {
+  public RecommendationPerformanceListResponseDto getGenreRecommendations(
+      String genre, Integer size, String sort
+  ) {
+    String cacheKey = GENRE_CACHE_KEY_PREFIX + genre;
+
+    try {
+      String cached = redisTemplate.opsForValue().get(cacheKey);
+      if (cached != null) {
+        return objectMapper.readValue(cached, RecommendationPerformanceListResponseDto.class);
+      }
+    } catch (Exception e) {
+      log.warn("⚠️ Genre Redis 캐시 파싱 실패");
+    }
 
     String normalizedSort = normalizeSort(sort);
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
 
-    List<Performance> performances;
+    List<Performance> performances =
+        "latest".equals(normalizedSort)
+            ? performanceRepository.findLatestByGenre(genre, pageable)
+            : performanceRepository.findPopularByGenre(genre, pageable);
 
-    if ("latest".equals(normalizedSort)) {
-      performances = performanceRepository.findLatestByGenre(genre, pageable);
-    } else {
-      performances = performanceRepository.findPopularByGenre(genre, pageable);
-      normalizedSort = "popularity";
+    List<RecommendedPerformanceDto> dtoList =
+        performances.stream().map(p -> recommendationMapper.toPerformance(p, null)).toList();
+
+    RecommendationPerformanceListResponseDto response =
+        RecommendationPerformanceListResponseDto.builder()
+            .totalCount(dtoList.size())
+            .requestedSize(limit)
+            .sort(normalizedSort)
+            .recommendations(dtoList)
+            .build();
+
+    try {
+      redisTemplate.opsForValue().set(
+          cacheKey,
+          objectMapper.writeValueAsString(response),
+          POPULAR_CACHE_TTL_MINUTES,
+          TimeUnit.MINUTES
+      );
+    } catch (Exception e) {
+      log.warn("⚠️ Genre Redis 저장 실패");
     }
 
-    List<RecommendedPerformanceDto> dtoList = performances.stream()
-        .map(p -> recommendationMapper.toPerformance(p, null))
-        .toList();
-
-    return RecommendationPerformanceListResponseDto.builder()
-        .totalCount(dtoList.size())
-        .requestedSize(limit)
-        .sort(normalizedSort)
-        .recommendations(dtoList)
-        .build();
+    return response;
   }
 
   // ================================
-  // 5) Popular
+  // 5) 인기 공연 (✅ Redis)
   // ================================
   public RecommendationPerformanceListResponseDto getPopularRecommendations(Integer size) {
+
+    try {
+      String cached = redisTemplate.opsForValue().get(POPULAR_CACHE_KEY);
+      if (cached != null) {
+        return objectMapper.readValue(cached, RecommendationPerformanceListResponseDto.class);
+      }
+    } catch (Exception e) {
+      log.warn("⚠️ Popular Redis 캐시 파싱 실패");
+    }
 
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
@@ -226,19 +255,32 @@ public class RecommendationService {
     List<RecommendedPerformanceDto> dtoList =
         list.stream().map(p -> recommendationMapper.toPerformance(p, null)).toList();
 
-    return RecommendationPerformanceListResponseDto.builder()
-        .totalCount(dtoList.size())
-        .requestedSize(limit)
-        .sort("popularity")
-        .recommendations(dtoList)
-        .build();
+    RecommendationPerformanceListResponseDto response =
+        RecommendationPerformanceListResponseDto.builder()
+            .totalCount(dtoList.size())
+            .requestedSize(limit)
+            .sort("popularity")
+            .recommendations(dtoList)
+            .build();
+
+    try {
+      redisTemplate.opsForValue().set(
+          POPULAR_CACHE_KEY,
+          objectMapper.writeValueAsString(response),
+          POPULAR_CACHE_TTL_MINUTES,
+          TimeUnit.MINUTES
+      );
+    } catch (Exception e) {
+      log.warn("⚠️ Popular Redis 저장 실패");
+    }
+
+    return response;
   }
 
   // ================================
-  // 6) Latest
+  // 6) 최신 공연
   // ================================
   public RecommendationPerformanceListResponseDto getLatestRecommendations(Integer size) {
-
     int limit = normalizeSize(size);
     PageRequest pageable = PageRequest.of(0, limit);
 
@@ -256,7 +298,7 @@ public class RecommendationService {
   }
 
   // ================================
-  // 7) Popular Places
+  // 7) 인기 공연장
   // ================================
   public RecommendationPlaceListResponseDto getPopularPlaces(Integer size) {
 
@@ -265,9 +307,8 @@ public class RecommendationService {
 
     List<Place> list = placeRepository.findPopularPlaces(pageable);
 
-    List<RecommendedPlaceDto> dtoList = list.stream()
-        .map(recommendationMapper::toPlace)
-        .toList();
+    List<RecommendedPlaceDto> dtoList =
+        list.stream().map(recommendationMapper::toPlace).toList();
 
     return RecommendationPlaceListResponseDto.builder()
         .totalCount(dtoList.size())
@@ -278,7 +319,7 @@ public class RecommendationService {
   }
 
   // ================================
-  // 8) Popular Chat Rooms
+  // 8) 인기 채팅방
   // ================================
   public RecommendationChatRoomListResponseDto getPopularChatRooms(Integer size) {
 
@@ -287,9 +328,8 @@ public class RecommendationService {
 
     List<ChatRoom> list = chatRoomRepository.findPopularChatRooms(pageable);
 
-    List<RecommendedChatRoomDto> dtoList = list.stream()
-        .map(recommendationMapper::toChatRoom)
-        .toList();
+    List<RecommendedChatRoomDto> dtoList =
+        list.stream().map(recommendationMapper::toChatRoom).toList();
 
     return RecommendationChatRoomListResponseDto.builder()
         .totalCount(dtoList.size())
@@ -299,39 +339,31 @@ public class RecommendationService {
         .build();
   }
 
-
-  /* ================================
-   최근 본 공연 1개 조회
-   ================================ */
+  // ================================
+  // 9) 최근 본 공연
+  // ================================
   public String getRecentViewedPerformance(Long userId) {
 
-    // 최근 VIEW 로그 1개 가져오기
-    var log = userEventLogRepository.findTopByUser_UserIdAndEventTypeOrderByCreatedAtDesc(
-        userId, UserEventLog.EventType.VIEW
-    ).orElse(null);
+    var log = userEventLogRepository
+        .findTopByUser_UserIdAndEventTypeOrderByCreatedAtDesc(
+            userId, UserEventLog.EventType.VIEW
+        ).orElse(null);
 
     if (log == null || !"PERFORMANCE".equalsIgnoreCase(log.getTargetType().name())) {
       throw new CustomException(RecommendationErrorCode.RECENT_PERFORMANCE_NOT_FOUND);
     }
 
-    return log.getTargetId(); // 여기가 performanceId
+    return log.getTargetId();
   }
 
-
-  /* ================================
-     최근 본 공연 기반 추천
-     ================================ */
+  // ================================
+  // 10) 최근 기반 추천
+  // ================================
   public RecommendationPerformanceListResponseDto getRecentSimilarRecommendations(
       Long userId, Integer size, String sort
   ) {
-    // 1) 최근 본 공연 ID 찾기
     String recentPerformanceId = getRecentViewedPerformance(userId);
-
-    // 2) 기존 "비슷한 공연 추천" 로직 재사용
     return getSimilarPerformances(recentPerformanceId, size, sort);
   }
-
-
-
 
 }
