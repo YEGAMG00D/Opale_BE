@@ -13,7 +13,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(indexName = "performances")
+@Document(indexName = "performances", createIndex = false)
 public class PerformanceSearchDocument {
 
   @Id
