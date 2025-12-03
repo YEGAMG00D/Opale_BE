@@ -90,6 +90,10 @@ public class ReservationService {
       place = performance.getPlace();
     }
 
+    // 🔥 좌석 정보 정규화 (수동 입력 보정)
+    String normalizedSeatInfo = normalizeSeatInfo(dto.getSeatInfo());
+    dto.setSeatInfo(normalizedSeatInfo);
+
     // 🔥 seatInfo / performanceDate는 이미 front에서 조립되어 들어옴
     UserTicketVerification ticket = reservationMapper.toEntity(dto, user, performance, place);
 
@@ -136,7 +140,7 @@ public class ReservationService {
 
     // 🔥 front에서 조립된 값 그대로 저장
     ticket.setPerformanceName(dto.getPerformanceName());
-    ticket.setSeatInfo(dto.getSeatInfo());
+    ticket.setSeatInfo(normalizeSeatInfo(dto.getSeatInfo()));
     ticket.setPerformanceDate(dto.getPerformanceDate());
     ticket.setPlaceName(dto.getPlaceName());
     ticket.setPerformance(performance);
@@ -222,6 +226,23 @@ public class ReservationService {
         .build();
   }
 
+  // ✅ 좌석 정보 통일 포맷: "다 11열 4번" → "다 11열-4번"
+  private String normalizeSeatInfo(String seatInfo) {
+    if (seatInfo == null) return null;
+
+    String trimmed = seatInfo.trim();
+    if (trimmed.isEmpty()) return null;
+
+    java.util.regex.Pattern p =
+        java.util.regex.Pattern.compile("^(.*?)(\\d+번)\\s*$");
+    java.util.regex.Matcher m = p.matcher(trimmed);
+
+    if (m.matches()) {
+      return m.group(1).trim() + "-" + m.group(2).trim();
+    }
+
+    return trimmed;
+  }
 
 
 
