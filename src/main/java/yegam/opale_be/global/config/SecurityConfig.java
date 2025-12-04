@@ -49,6 +49,7 @@ public class SecurityConfig {
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(
                 "/api/auth/login",
+                "/api/auth/refresh",
                 "/api/users",
                 "/api/users/check-duplicate",
                 "/api/users/check-nickname",
@@ -135,7 +136,7 @@ public class SecurityConfig {
         )
 
         // JWT 필터 등록
-        .addFilterAfter(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
   }

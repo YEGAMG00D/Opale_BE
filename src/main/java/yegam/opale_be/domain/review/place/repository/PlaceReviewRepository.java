@@ -97,4 +97,6 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
   Optional<PlaceReview> findByTicket_TicketId(Long ticketId);
 
 
+  void deleteByTicket_TicketId(Long ticketId);
+
 }
