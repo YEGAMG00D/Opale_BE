@@ -135,8 +135,9 @@ public class PlaceReviewService {
     return reviewMapper.toResponseDto(review);
   }
 
-  /** 리뷰 삭제 */
+  /** ✅ ✅ ✅ 리뷰 삭제 (물리 삭제로 변경) */
   public void deleteReview(Long userId, Long reviewId) {
+
     PlaceReview review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
 
@@ -144,10 +145,11 @@ public class PlaceReviewService {
       throw new CustomException(PlaceReviewErrorCode.REVIEW_ACCESS_DENIED);
     }
 
-    review.setIsDeleted(true);
-    review.setDeletedAt(LocalDateTime.now());
+    String placeId = review.getPlace().getPlaceId();
 
-    updatePlaceAverageRating(review.getPlace().getPlaceId());
+    reviewRepository.delete(review);   // ✅ 물리 삭제
+
+    updatePlaceAverageRating(placeId);
   }
 
   /** 평균 평점 갱신 */

@@ -204,8 +204,9 @@ public class PerformanceReviewService {
 
 
 
-  /** 리뷰 삭제 */
+  /** ✅ ✅ ✅ 리뷰 삭제 (물리 삭제로 변경) */
   public void deleteReview(Long userId, Long reviewId) {
+
     PerformanceReview review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new CustomException(PerformanceReviewErrorCode.REVIEW_NOT_FOUND));
 
@@ -213,10 +214,11 @@ public class PerformanceReviewService {
       throw new CustomException(PerformanceReviewErrorCode.REVIEW_ACCESS_DENIED);
     }
 
-    review.setIsDeleted(true);
-    review.setDeletedAt(LocalDateTime.now());
+    String performanceId = review.getPerformance().getPerformanceId();
 
-    updatePerformanceAverageRating(review.getPerformance().getPerformanceId());
+    reviewRepository.delete(review);   // ✅ 물리 삭제
+
+    updatePerformanceAverageRating(performanceId);
   }
 
   /** 평균 갱신 */
