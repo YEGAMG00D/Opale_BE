@@ -178,13 +178,25 @@ public class ReservationService {
 
 
   /** 티켓 삭제 */
+  @Transactional
   public void deleteTicket(Long userId, Long ticketId) {
-    UserTicketVerification ticket = ticketRepository.findByTicketIdAndUser_UserId(ticketId, userId)
-        .orElseThrow(() -> new CustomException(ReservationErrorCode.TICKET_NOT_FOUND));
 
+    UserTicketVerification ticket =
+        ticketRepository.findByTicketIdAndUser_UserId(ticketId, userId)
+            .orElseThrow(() -> new CustomException(ReservationErrorCode.TICKET_NOT_FOUND));
+
+    // ✅ 1. 공연 리뷰 물리 삭제 (FK 먼저 제거)
+    performanceReviewRepository.deleteByTicket_TicketId(ticketId);
+
+    // ✅ 2. 공연장 리뷰 물리 삭제 (FK 먼저 제거)
+    placeReviewRepository.deleteByTicket_TicketId(ticketId);
+
+    // ✅ 3. 마지막에 티켓 삭제
     ticketRepository.delete(ticket);
-    log.info("🗑️ 티켓 삭제 완료: ticketId={}, userId={}", ticketId, userId);
+
+    log.info("🗑️ 티켓 + 연결 리뷰 전부 삭제 완료: ticketId={}, userId={}", ticketId, userId);
   }
+
 
   /** 단일 조회 */
   @Transactional(readOnly = true)

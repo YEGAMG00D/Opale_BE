@@ -82,6 +82,8 @@ public interface PerformanceReviewRepository extends JpaRepository<PerformanceRe
   Optional<PerformanceReview> findByTicket_TicketId(Long ticketId);
 
 
+  void deleteByTicket_TicketId(Long ticketId);
+
 }
 
 
