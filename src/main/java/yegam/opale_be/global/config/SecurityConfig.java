@@ -49,6 +49,7 @@ public class SecurityConfig {
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
             .requestMatchers(
                 "/api/auth/login",
+                "/api/auth/refresh",
                 "/api/users",
                 "/api/users/check-duplicate",
                 "/api/users/check-nickname",
