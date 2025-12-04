@@ -17,6 +17,7 @@ import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.reservation.dto.request.TicketCreateRequestDto;
 import yegam.opale_be.domain.reservation.dto.request.TicketUpdateRequestDto;
+import yegam.opale_be.domain.reservation.dto.response.TicketDetailListResponseDto;
 import yegam.opale_be.domain.reservation.dto.response.TicketDetailResponseDto;
 import yegam.opale_be.domain.reservation.dto.response.TicketOcrResponseDto;
 import yegam.opale_be.domain.reservation.dto.response.TicketReviewBundleResponseDto;
@@ -67,68 +68,93 @@ public class ReservationService {
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(ReservationErrorCode.INVALID_TICKET_DATA));
 
-    // 🔎 performanceName + 날짜로 공연 찾기
-    LocalDate performanceDateOnly =
-        dto.getPerformanceDate() != null ? dto.getPerformanceDate().toLocalDate() : null;
+    // ✅ 1) 공연 ID 우선
+    Performance performance = null;
+    if (dto.getPerformanceId() != null && !dto.getPerformanceId().isBlank()) {
+      performance = performanceRepository
+          .findById(dto.getPerformanceId())
+          .orElse(null);
+    }
 
-    Performance performance = performanceRepository
-        .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
-        .orElse(null);
+    // ✅ 2) ID 없으면 기존 name + 날짜 매칭
+    if (performance == null && dto.getPerformanceName() != null) {
+      LocalDate performanceDateOnly =
+          dto.getPerformanceDate() != null ? dto.getPerformanceDate().toLocalDate() : null;
 
-    // 🔎 공연장 찾기 (다단계 매칭)
+      performance = performanceRepository
+          .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
+          .orElse(null);
+    }
+
+    // ✅ 3) 공연장 ID 우선
     Place place = null;
+    if (dto.getPlaceId() != null && !dto.getPlaceId().isBlank()) {
+      place = placeRepository
+          .findById(dto.getPlaceId())
+          .orElse(null);
+    }
 
-    // 1) placeName이 비어있지 않으면 부분 일치 검색
-    if (dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
+    // ✅ 4) ID 없으면 name 기반 검색
+    if (place == null && dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
       place = placeRepository
           .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
           .orElse(null);
     }
 
-    // 2) 그래도 못 찾았고, performance 가 있으면 → 공연의 공연장 사용
+    // ✅ 5) 그래도 없으면 performance에서 추론
     if (place == null && performance != null) {
       place = performance.getPlace();
     }
 
-    // 🔥 좌석 정보 정규화 (수동 입력 보정)
-    String normalizedSeatInfo = normalizeSeatInfo(dto.getSeatInfo());
-    dto.setSeatInfo(normalizedSeatInfo);
+    // ✅ 좌석 포맷 보정
+    dto.setSeatInfo(normalizeSeatInfo(dto.getSeatInfo()));
 
-    // 🔥 seatInfo / performanceDate는 이미 front에서 조립되어 들어옴
-    UserTicketVerification ticket = reservationMapper.toEntity(dto, user, performance, place);
+    UserTicketVerification ticket =
+        reservationMapper.toEntity(dto, user, performance, place);
 
-    // 🔥 필수: 생성시 기본값 세팅
     ticket.setIsVerified(false);
     ticket.setRequestedAt(LocalDateTime.now());
     ticket.setUpdatedAt(LocalDateTime.now());
 
     ticketRepository.save(ticket);
 
-    log.info("🎟️ 티켓 등록 완료: ticketId={}, userId={}, performance={}, place={}",
-        ticket.getTicketId(), userId,
-        performance != null ? performance.getTitle() : "null",
-        place != null ? place.getName() : "null");
-
     return reservationMapper.toDetailResponseDto(ticket);
   }
+
 
   /** 🔥 티켓 수정 */
   public TicketDetailResponseDto updateTicket(Long userId, Long ticketId, TicketUpdateRequestDto dto) {
 
-    UserTicketVerification ticket = ticketRepository.findByTicketIdAndUser_UserId(ticketId, userId)
+    UserTicketVerification ticket = ticketRepository
+        .findByTicketIdAndUser_UserId(ticketId, userId)
         .orElseThrow(() -> new CustomException(ReservationErrorCode.TICKET_NOT_FOUND));
 
-    LocalDate performanceDateOnly =
-        dto.getPerformanceDate() != null ? dto.getPerformanceDate().toLocalDate() : null;
+    // ✅ 공연 ID 우선
+    Performance performance = null;
+    if (dto.getPerformanceId() != null && !dto.getPerformanceId().isBlank()) {
+      performance = performanceRepository
+          .findById(dto.getPerformanceId())
+          .orElse(null);
+    }
 
-    Performance performance = performanceRepository
-        .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
-        .orElse(null);
+    if (performance == null && dto.getPerformanceName() != null) {
+      LocalDate performanceDateOnly =
+          dto.getPerformanceDate() != null ? dto.getPerformanceDate().toLocalDate() : null;
 
-    // 🔎 공연장 찾기 (다단계 매칭)
+      performance = performanceRepository
+          .findFirstByTitleAndDateRange(dto.getPerformanceName(), performanceDateOnly)
+          .orElse(null);
+    }
+
+    // ✅ 공연장 ID 우선
     Place place = null;
+    if (dto.getPlaceId() != null && !dto.getPlaceId().isBlank()) {
+      place = placeRepository
+          .findById(dto.getPlaceId())
+          .orElse(null);
+    }
 
-    if (dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
+    if (place == null && dto.getPlaceName() != null && !dto.getPlaceName().isBlank()) {
       place = placeRepository
           .findFirstByNameContainingIgnoreCase(dto.getPlaceName())
           .orElse(null);
@@ -138,23 +164,18 @@ public class ReservationService {
       place = performance.getPlace();
     }
 
-    // 🔥 front에서 조립된 값 그대로 저장
+    // ✅ 값 반영 (null 허용)
     ticket.setPerformanceName(dto.getPerformanceName());
-    ticket.setSeatInfo(normalizeSeatInfo(dto.getSeatInfo()));
     ticket.setPerformanceDate(dto.getPerformanceDate());
+    ticket.setSeatInfo(normalizeSeatInfo(dto.getSeatInfo()));
     ticket.setPlaceName(dto.getPlaceName());
-    ticket.setPerformance(performance);
-    ticket.setPlace(place);
-
+    ticket.setPerformance(performance); // ✅ null 가능
+    ticket.setPlace(place);             // ✅ null 가능
     ticket.setUpdatedAt(LocalDateTime.now());
-
-    log.info("📝 티켓 수정 완료: ticketId={}, userId={}, performance={}, place={}",
-        ticket.getTicketId(), userId,
-        performance != null ? performance.getTitle() : "null",
-        place != null ? place.getName() : "null");
 
     return reservationMapper.toDetailResponseDto(ticket);
   }
+
 
   /** 티켓 삭제 */
   public void deleteTicket(Long userId, Long ticketId) {
@@ -196,6 +217,21 @@ public class ReservationService {
         .tickets(tickets)
         .build();
   }
+
+  /** ✅ 상세 티켓 인증 목록 조회 */
+  @Transactional(readOnly = true)
+  public TicketDetailListResponseDto getTicketDetailList(Long userId, int page, int size) {
+
+    PageRequest pageable = PageRequest.of(page - 1, size);
+
+    Page<UserTicketVerification> ticketPage =
+        ticketRepository.findAllByUser_UserIdOrderByRequestedAtDesc(userId, pageable);
+
+    return reservationMapper.toDetailListResponseDto(ticketPage, page, size);
+  }
+
+
+
 
   @Transactional(readOnly = true)
   public TicketReviewBundleResponseDto getTicketReviews(Long userId, Long ticketId) {

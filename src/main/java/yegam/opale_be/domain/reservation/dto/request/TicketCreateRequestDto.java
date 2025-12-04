@@ -27,4 +27,12 @@ public class TicketCreateRequestDto {
 
   @Schema(description = "공연장명", example = "블루스퀘어 신한카드홀")
   private String placeName;
+
+  @Schema(description = "공연 ID (일치하는 공연 없으면 null)", example = "PF12345")
+  private String performanceId;
+
+  @Schema(description = "공연장 ID (일치하는 공연장 없으면 null)", example = "PLC0001")
+  private String placeId;
+
+
 }
