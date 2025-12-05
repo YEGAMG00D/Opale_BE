@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
+import yegam.opale_be.domain.favorite.review.repository.FavoritePerformanceReviewRepository;
 import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
 import yegam.opale_be.domain.reservation.repository.UserTicketVerificationRepository;
 import yegam.opale_be.domain.review.common.ReviewType;
@@ -34,6 +35,7 @@ public class PerformanceReviewService {
   private final UserRepository userRepository;
   private final UserTicketVerificationRepository ticketRepository;
   private final PerformanceReviewMapper reviewMapper;
+  private final FavoritePerformanceReviewRepository favoritePerformanceReviewRepository;
 
   /** 단건 조회 */
   @Transactional(readOnly = true)
@@ -204,7 +206,7 @@ public class PerformanceReviewService {
 
 
 
-  /** ✅ ✅ ✅ 리뷰 삭제 (물리 삭제로 변경) */
+  /** ✅ 리뷰 삭제 (물리 삭제) */
   public void deleteReview(Long userId, Long reviewId) {
 
     PerformanceReview review = reviewRepository.findById(reviewId)
@@ -216,10 +218,16 @@ public class PerformanceReviewService {
 
     String performanceId = review.getPerformance().getPerformanceId();
 
-    reviewRepository.delete(review);   // ✅ 물리 삭제
+    // ✅ 1. 이 리뷰에 달린 모든 관심 먼저 물리 삭제
+    favoritePerformanceReviewRepository
+        .deleteByPerformanceReview_PerformanceReviewId(reviewId);
+
+    // ✅ 2. 리뷰 물리 삭제
+    reviewRepository.delete(review);
 
     updatePerformanceAverageRating(performanceId);
   }
+
 
   /** 평균 갱신 */
   private void updatePerformanceAverageRating(String performanceId) {

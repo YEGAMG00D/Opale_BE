@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.favorite.review.repository.FavoritePlaceReviewRepository;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
@@ -34,6 +35,7 @@ public class PlaceReviewService {
   private final UserRepository userRepository;
   private final UserTicketVerificationRepository ticketRepository;
   private final PlaceReviewMapper reviewMapper;
+  private final FavoritePlaceReviewRepository favoritePlaceReviewRepository;
 
   /** 단건 조회 */
   @Transactional(readOnly = true)
@@ -146,6 +148,9 @@ public class PlaceReviewService {
     }
 
     String placeId = review.getPlace().getPlaceId();
+
+    favoritePlaceReviewRepository
+        .deleteByPlaceReview_PlaceReviewId(reviewId);
 
     reviewRepository.delete(review);   // ✅ 물리 삭제
 

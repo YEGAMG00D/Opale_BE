@@ -29,8 +29,15 @@ public class FavoritePerformanceReviewService {
   private final UserRepository userRepository;
   private final FavoritePerformanceReviewMapper favoritePerformanceReviewMapper;
 
-  // 1️⃣ 토글 (✅ 기존 그대로)
+  // 1️⃣ 토글 (✅ 삭제된 리뷰 방어 추가)
   public boolean toggleFavorite(Long userId, Long performanceReviewId) {
+
+    // ✅ 이미 삭제된 리뷰 방어
+    if (!performanceReviewRepository.existsById(performanceReviewId)) {
+      log.warn("⚠️ 삭제된 공연 리뷰에 대한 관심 요청 차단: reviewId={}", performanceReviewId);
+      return false;
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
@@ -65,20 +72,19 @@ public class FavoritePerformanceReviewService {
         .existsByUser_UserIdAndPerformanceReview_PerformanceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (✅ 그대로)
+  // 3️⃣ ID 리스트 (✅ 삭제된 리뷰 자동 제외 쿼리 사용)
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePerformanceReviewRepository.findPerformanceReviewIdsByUserId(userId);
   }
 
-  // ✅ 4️⃣ 마이페이지 상세 목록 (🔥 여기만 수정)
+  // ✅ 4️⃣ 마이페이지 상세 목록 (✅ 그대로)
   @Transactional(readOnly = true)
   public List<FavoritePerformanceReviewResponseDto> getFavoriteReviews(Long userId) {
     userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
-    // ✅ Favorite 엔티티로 직접 조회
     List<FavoritePerformanceReview> likedFavorites =
         favoritePerformanceReviewRepository.findByUser_UserIdAndIsLikedTrue(userId);
 

@@ -29,8 +29,15 @@ public class FavoritePlaceReviewService {
   private final UserRepository userRepository;
   private final FavoritePlaceReviewMapper favoritePlaceReviewMapper;
 
-  // 1️⃣ 토글 (✅ 그대로)
+  // 1️⃣ 토글 (✅ 삭제된 리뷰 방어 추가)
   public boolean toggleFavorite(Long userId, Long placeReviewId) {
+
+    // ✅ 이미 삭제된 리뷰 방어
+    if (!placeReviewRepository.existsById(placeReviewId)) {
+      log.warn("⚠️ 삭제된 공연장 리뷰에 대한 관심 요청 차단: reviewId={}", placeReviewId);
+      return false;
+    }
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 
@@ -65,14 +72,14 @@ public class FavoritePlaceReviewService {
         .existsByUser_UserIdAndPlaceReview_PlaceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (✅ 그대로)
+  // 3️⃣ ID 리스트 (✅ 삭제된 리뷰 자동 제외 쿼리 사용)
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePlaceReviewRepository.findPlaceReviewIdsByUserId(userId);
   }
 
-  // ✅ 4️⃣ 마이페이지 상세 목록 (🔥 여기만 수정)
+  // ✅ 4️⃣ 마이페이지 상세 목록 (✅ 그대로)
   @Transactional(readOnly = true)
   public List<FavoritePlaceReviewResponseDto> getFavoriteReviews(Long userId) {
     userRepository.findById(userId)
