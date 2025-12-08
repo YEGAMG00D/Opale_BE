@@ -59,7 +59,8 @@ public class SecurityConfig {
                 "/api/performances/**",
                 "/api/places/**",
                 "/api/discounts/**",
-                "/ws/**"
+                "/ws/**",
+                "/api/search/**"
             ).permitAll()
 
             // 공연 상세 수집 이미지, 수집 영상
