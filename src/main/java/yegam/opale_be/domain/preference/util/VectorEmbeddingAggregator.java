@@ -22,10 +22,10 @@ public class VectorEmbeddingAggregator {
 
   /** ✅ 이벤트별 기본 가중치 */
   private static final Map<UserEventLog.EventType, Double> BASE_WEIGHTS = Map.of(
-      UserEventLog.EventType.VIEW, 1.0,
-      UserEventLog.EventType.FAVORITE, 3.0,
-      UserEventLog.EventType.BOOKED, 5.0,
-      UserEventLog.EventType.REVIEW_WRITE, 10.0
+      UserEventLog.EventType.VIEW, 4.0,
+      UserEventLog.EventType.FAVORITE, 5.0,
+      UserEventLog.EventType.BOOKED, 6.0,
+      UserEventLog.EventType.REVIEW_WRITE, 7.0
   );
 
   /** ✅ time-decay용 반감기 (대략 30일 기준) */

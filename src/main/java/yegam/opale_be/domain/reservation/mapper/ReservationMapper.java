@@ -9,6 +9,8 @@ import yegam.opale_be.domain.reservation.entity.Source;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.user.entity.User;
+import yegam.opale_be.domain.reservation.dto.response.TicketDetailListResponseDto;
+import org.springframework.data.domain.Page;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -87,4 +89,26 @@ public class ReservationMapper {
         .map(this::toSimpleResponseDto)
         .collect(Collectors.toList());
   }
+
+  /** ✅ Entity Page → 상세 목록 응답 DTO */
+  public TicketDetailListResponseDto toDetailListResponseDto(
+      Page<UserTicketVerification> ticketPage,
+      int currentPage,
+      int pageSize
+  ) {
+    return TicketDetailListResponseDto.builder()
+        .totalCount(ticketPage.getTotalElements())
+        .currentPage(currentPage)
+        .pageSize(pageSize)
+        .totalPages(ticketPage.getTotalPages())
+        .hasNext(ticketPage.hasNext())
+        .hasPrev(ticketPage.hasPrevious())
+        .tickets(
+            ticketPage.getContent().stream()
+                .map(this::toDetailResponseDto)
+                .collect(Collectors.toList())
+        )
+        .build();
+  }
+
 }

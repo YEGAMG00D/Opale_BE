@@ -17,8 +17,13 @@ public interface FavoritePerformanceRepository extends JpaRepository<FavoritePer
   boolean existsByUser_UserIdAndPerformance_PerformanceIdAndIsLikedTrue(Long userId, String performanceId);
 
   /** 마이페이지용: 좋아요한 Performance 엔티티 목록 */
-  @Query("SELECT fp.performance FROM FavoritePerformance fp " +
-      "WHERE fp.user.userId = :userId AND fp.isLiked = true")
+  @Query("""
+   SELECT fp.performance 
+   FROM FavoritePerformance fp
+   WHERE fp.user.userId = :userId 
+     AND fp.isLiked = true
+   ORDER BY fp.createdAt DESC
+""")
   List<Performance> findLikedPerformancesByUserId(Long userId);
 
   /** 목록 페이지 하트 표시용: 좋아요한 performanceId 목록 */

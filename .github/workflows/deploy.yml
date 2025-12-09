@@ -48,6 +48,8 @@ jobs:
             docker rm opale-be || true
             docker stop mysql-opale || true
             docker rm mysql-opale || true
+            docker stop opale-redis || true
+            docker rm opale-redis || true
 
             echo "📂 현재 디렉토리:"
             pwd

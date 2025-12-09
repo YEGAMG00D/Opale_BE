@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import yegam.opale_be.domain.favorite.review.repository.FavoritePlaceReviewRepository;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.reservation.entity.UserTicketVerification;
@@ -34,6 +35,7 @@ public class PlaceReviewService {
   private final UserRepository userRepository;
   private final UserTicketVerificationRepository ticketRepository;
   private final PlaceReviewMapper reviewMapper;
+  private final FavoritePlaceReviewRepository favoritePlaceReviewRepository;
 
   /** 단건 조회 */
   @Transactional(readOnly = true)
@@ -135,8 +137,9 @@ public class PlaceReviewService {
     return reviewMapper.toResponseDto(review);
   }
 
-  /** 리뷰 삭제 */
+  /** ✅ ✅ ✅ 리뷰 삭제 (물리 삭제로 변경) */
   public void deleteReview(Long userId, Long reviewId) {
+
     PlaceReview review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
 
@@ -144,10 +147,14 @@ public class PlaceReviewService {
       throw new CustomException(PlaceReviewErrorCode.REVIEW_ACCESS_DENIED);
     }
 
-    review.setIsDeleted(true);
-    review.setDeletedAt(LocalDateTime.now());
+    String placeId = review.getPlace().getPlaceId();
 
-    updatePlaceAverageRating(review.getPlace().getPlaceId());
+    favoritePlaceReviewRepository
+        .deleteByPlaceReview_PlaceReviewId(reviewId);
+
+    reviewRepository.delete(review);   // ✅ 물리 삭제
+
+    updatePlaceAverageRating(placeId);
   }
 
   /** 평균 평점 갱신 */

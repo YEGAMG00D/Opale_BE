@@ -26,6 +26,14 @@ public class TicketOcrResponseDto {
   @Schema(description = "좌석 정보", example = "나 구역 15열 23번")
   private String seatInfo;
 
+  /** ✅ 폼에서 '구역/열' 입력 칸에 넣을 값 */
+  @Schema(description = "좌석 정보 앞부분 (구역 + 열)", example = "다 11열")
+  private String seatFront;
+
+  /** ✅ 폼에서 '번' 입력 칸에 넣을 값 (숫자만) */
+  @Schema(description = "좌석 번호 (숫자만)", example = "4")
+  private String seatNumber;
+
   @Schema(description = "공연장명", example = "블루스퀘어 신한카드홀")
   private String placeName;
 }
