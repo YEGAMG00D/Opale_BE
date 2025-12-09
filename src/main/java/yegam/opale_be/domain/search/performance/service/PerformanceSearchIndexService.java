@@ -14,11 +14,11 @@ import org.springframework.data.elasticsearch.core.suggest.Completion;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
 import yegam.opale_be.domain.search.performance.document.PerformanceSearchDocument;
 import yegam.opale_be.domain.search.performance.dto.PerformanceAutoCompleteResponseDto;
+import yegam.opale_be.domain.search.performance.mapper.PerformanceAutoCompleteMapper;
 import yegam.opale_be.domain.search.performance.repository.PerformanceSearchRepository;
 
 import java.util.Arrays;
 import java.util.List;
-
 
 @Service
 @RequiredArgsConstructor
@@ -40,18 +40,8 @@ public class PerformanceSearchIndexService {
                 .genrenm(p.getGenrenm())
                 .placeName(p.getPlaceName())
 
-                // ✅ java.sql.Date 안전 변환 (toInstant 절대 사용 금지)
-                .startDate(
-                    p.getStartDate() != null
-                        ? p.getStartDate().getTime()
-                        : null
-                )
-
-                .endDate(
-                    p.getEndDate() != null
-                        ? p.getEndDate().getTime()
-                        : null
-                )
+                .startDate(p.getStartDate() != null ? p.getStartDate().getTime() : null)
+                .endDate(p.getEndDate() != null ? p.getEndDate().getTime() : null)
 
                 .aiSummary(p.getAiSummary())
 
@@ -63,9 +53,7 @@ public class PerformanceSearchIndexService {
                             .toList()
                 )
 
-                // ✅ 자동완성용 (Completion은 builder 없음 → 생성자 사용)
                 .titleSuggest(new Completion(List.of(p.getTitle())))
-
                 .build())
             .toList();
 
@@ -80,28 +68,9 @@ public class PerformanceSearchIndexService {
     NativeQuery query = NativeQuery.builder()
         .withQuery(q -> q
             .bool(b -> b
-                .should(s -> s
-                    .matchPhrasePrefix(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .boost(3.0f)   // 가장 중요한 정확 매칭
-                    )
-                )
-                .should(s -> s
-                    .prefix(p -> p
-                        .field("title")
-                        .value(keyword)
-                        .boost(2.0f)
-                    )
-                )
-                .should(s -> s
-                    .match(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .fuzziness("AUTO")
-                        .boost(1.0f)
-                    )
-                )
+                .should(s -> s.matchPhrasePrefix(m -> m.field("title").query(keyword).boost(3.0f)))
+                .should(s -> s.prefix(p -> p.field("title").value(keyword).boost(2.0f)))
+                .should(s -> s.match(m -> m.field("title").query(keyword).fuzziness("AUTO").boost(1.0f)))
             )
         )
         .withMaxResults(20)
@@ -116,38 +85,17 @@ public class PerformanceSearchIndexService {
         .toList();
   }
 
-  /** ✅ 자동완성 (정확도 기반 정렬 완전 적용) */
+
+  /** ✅ 자동완성 (MySQL에서 추가 필드까지 끌어오기) */
   @Transactional(readOnly = true)
   public List<PerformanceAutoCompleteResponseDto> autoComplete(String keyword) {
 
     NativeQuery query = NativeQuery.builder()
         .withQuery(q -> q
             .bool(b -> b
-                // 1순위: 정확한 앞단어 일치
-                .should(s -> s
-                    .matchPhrasePrefix(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .boost(5.0f)
-                    )
-                )
-                // 2순위: prefix
-                .should(s -> s
-                    .prefix(p -> p
-                        .field("title")
-                        .value(keyword)
-                        .boost(3.0f)
-                    )
-                )
-                // 3순위: 오타 허용
-                .should(s -> s
-                    .match(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .fuzziness("AUTO")
-                        .boost(1.0f)
-                    )
-                )
+                .should(s -> s.matchPhrasePrefix(m -> m.field("title").query(keyword).boost(5.0f)))
+                .should(s -> s.prefix(p -> p.field("title").value(keyword).boost(3.0f)))
+                .should(s -> s.match(m -> m.field("title").query(keyword).fuzziness("AUTO").boost(1.0f)))
             )
         )
         .withMaxResults(10)
@@ -158,10 +106,19 @@ public class PerformanceSearchIndexService {
 
     return hits.getSearchHits()
         .stream()
-        .map(hit -> new PerformanceAutoCompleteResponseDto(
-            hit.getContent().getPerformanceId(),
-            hit.getContent().getTitle()
-        ))
+        .map(hit -> {
+          String id = hit.getContent().getPerformanceId();
+
+          return performanceRepository.findById(id)
+              .map(PerformanceAutoCompleteMapper::toDto)
+              .orElseGet(() -> new PerformanceAutoCompleteResponseDto(
+                  id,
+                  hit.getContent().getTitle(),
+                  null,
+                  null,
+                  null
+              ));
+        })
         .toList();
   }
 
@@ -173,43 +130,21 @@ public class PerformanceSearchIndexService {
     NativeQuery query = NativeQuery.builder()
         .withQuery(q -> q
             .bool(b -> b
-                .should(s -> s
-                    .matchPhrasePrefix(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .boost(5.0f)
-                    )
-                )
-                .should(s -> s
-                    .prefix(p -> p
-                        .field("title")
-                        .value(keyword)
-                        .boost(3.0f)
-                    )
-                )
-                .should(s -> s
-                    .match(m -> m
-                        .field("title")
-                        .query(keyword)
-                        .fuzziness("AUTO")
-                        .boost(1.0f)
-                    )
-                )
+                .should(s -> s.matchPhrasePrefix(m -> m.field("title").query(keyword).boost(5.0f)))
+                .should(s -> s.prefix(p -> p.field("title").value(keyword).boost(3.0f)))
+                .should(s -> s.match(m -> m.field("title").query(keyword).fuzziness("AUTO").boost(1.0f)))
             )
         )
-        .withMaxResults(100)   // 필요한 만큼
+        .withMaxResults(100)
         .build();
 
     SearchHits<PerformanceSearchDocument> hits =
         elasticsearchOperations.search(query, PerformanceSearchDocument.class);
 
-    // ✅ ES score 순서 그대로 ID만 추출
     return hits.getSearchHits()
         .stream()
         .map(hit -> hit.getContent().getPerformanceId())
         .toList();
   }
-
-
 
 }
