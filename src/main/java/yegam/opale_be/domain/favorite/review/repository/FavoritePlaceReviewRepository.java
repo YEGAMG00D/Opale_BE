@@ -1,6 +1,7 @@
 package yegam.opale_be.domain.favorite.review.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import yegam.opale_be.domain.favorite.review.entity.FavoritePlaceReview;
@@ -16,7 +17,7 @@ public interface FavoritePlaceReviewRepository extends JpaRepository<FavoritePla
 
   boolean existsByUser_UserIdAndPlaceReview_PlaceReviewIdAndIsLikedTrue(Long userId, Long placeReviewId);
 
-  /** 마이페이지용: 좋아요한 PlaceReview 엔티티 목록 */
+  /** 마이페이지용 */
   @Query("""
       SELECT fpr.placeReview
       FROM FavoritePlaceReview fpr
@@ -26,7 +27,6 @@ public interface FavoritePlaceReviewRepository extends JpaRepository<FavoritePla
       """)
   List<PlaceReview> findLikedPlaceReviewsByUserId(Long userId);
 
-  // 마이페이지용 (기존 유지)
   List<FavoritePlaceReview> findByUser_UserIdAndIsLikedTrue(Long userId);
 
   /** 목록/상세 하트 표시용 */
@@ -41,4 +41,15 @@ public interface FavoritePlaceReviewRepository extends JpaRepository<FavoritePla
   List<Long> findPlaceReviewIdsByUserId(Long userId);
 
   void deleteByPlaceReview_PlaceReviewId(Long placeReviewId);
+
+  /** ⭐ 공연장 리뷰 soft delete 시 favorite도 soft delete */
+  @Modifying
+  @Query("""
+      UPDATE FavoritePlaceReview f
+      SET f.isDeleted = true,
+          f.deletedAt = CURRENT_TIMESTAMP,
+          f.isLiked = false
+      WHERE f.placeReview.placeReviewId = :reviewId
+      """)
+  void softDeleteByReviewId(Long reviewId);
 }

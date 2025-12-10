@@ -1,6 +1,7 @@
 package yegam.opale_be.domain.favorite.performance.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 import yegam.opale_be.domain.favorite.performance.entity.FavoritePerformance;
@@ -27,7 +28,7 @@ public interface FavoritePerformanceRepository extends JpaRepository<FavoritePer
 """)
   List<Performance> findLikedPerformancesByUserId(Long userId);
 
-  /** 목록 페이지 하트 표시용: 좋아요한 performanceId 목록 */
+  /** 목록 페이지 하트 표시용 */
   @Query("""
       SELECT fp.performance.performanceId
       FROM FavoritePerformance fp
@@ -36,4 +37,15 @@ public interface FavoritePerformanceRepository extends JpaRepository<FavoritePer
         AND fp.isDeleted = false
       """)
   List<String> findLikedPerformanceIdsByUserId(Long userId);
+
+  /** ⭐ 공연이 soft delete 될 때 Favorite도 soft delete */
+  @Modifying
+  @Query("""
+      UPDATE FavoritePerformance fp
+      SET fp.isDeleted = true,
+          fp.deletedAt = CURRENT_TIMESTAMP,
+          fp.isLiked = false
+      WHERE fp.performance.performanceId = :performanceId
+      """)
+  void softDeleteByPerformanceId(String performanceId);
 }
