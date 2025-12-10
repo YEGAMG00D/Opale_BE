@@ -51,6 +51,13 @@ public class UserTicketVerification {
   @Column(name = "place_name", length = 100)
   private String placeName; // 공연장 명
 
+  @Column(name = "is_deleted")
+  private Boolean isDeleted = false;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
+
 
   // 사용자 (항상 존재해야 함)
   @ManyToOne(fetch = FetchType.LAZY)
