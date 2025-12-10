@@ -29,12 +29,12 @@ public class FavoritePerformanceReviewService {
   private final UserRepository userRepository;
   private final FavoritePerformanceReviewMapper favoritePerformanceReviewMapper;
 
-  // 1️⃣ 토글 (✅ 삭제된 리뷰 방어 추가)
+  /** ⭐ 토글 (soft delete 사용 안 함) */
   public boolean toggleFavorite(Long userId, Long performanceReviewId) {
 
-    // ✅ 이미 삭제된 리뷰 방어
+    // 삭제된 리뷰에 대한 토글 요청 방어
     if (!performanceReviewRepository.existsById(performanceReviewId)) {
-      log.warn("⚠️ 삭제된 공연 리뷰에 대한 관심 요청 차단: reviewId={}", performanceReviewId);
+      log.warn("⚠️ 삭제된 공연 리뷰에 대한 관심 요청 차단 reviewId={}", performanceReviewId);
       return false;
     }
 
@@ -48,40 +48,57 @@ public class FavoritePerformanceReviewService {
         .findByUser_UserIdAndPerformanceReview_PerformanceReviewId(userId, performanceReviewId)
         .orElse(null);
 
+    // 신규 생성
     if (favorite == null) {
-      FavoritePerformanceReview newFavorite = FavoritePerformanceReview.builder()
-          .user(user)
-          .performanceReview(review)
-          .isLiked(true)
-          .build();
-      favoritePerformanceReviewRepository.save(newFavorite);
-      log.info("💖 공연 리뷰 관심 등록: userId={}, reviewId={}", userId, performanceReviewId);
+      favoritePerformanceReviewRepository.save(
+          FavoritePerformanceReview.builder()
+              .user(user)
+              .performanceReview(review)
+              .isLiked(true)
+              .isDeleted(false)
+              .build()
+      );
+      log.info("💖 공연 리뷰 관심 등록 userId={}, reviewId={}", userId, performanceReviewId);
       return true;
     }
 
-    favorite.setIsLiked(!favorite.getIsLiked());
-    log.info("🔁 공연 리뷰 관심 토글: userId={}, reviewId={}, now={}", userId, performanceReviewId, favorite.getIsLiked());
-    return favorite.getIsLiked();
+    // soft delete → 복구
+    if (favorite.getIsDeleted()) {
+      favorite.setIsDeleted(false);
+      favorite.setDeletedAt(null);
+      favorite.setIsLiked(true);
+      log.info("♻️ soft delete 복구 userId={}, reviewId={}", userId, performanceReviewId);
+      return true;
+    }
+
+    // 일반 토글
+    boolean newState = !favorite.getIsLiked();
+    favorite.setIsLiked(newState);
+    log.info("🔁 공연 리뷰 관심 토글 userId={}, reviewId={}, now={}", userId, performanceReviewId, newState);
+
+    return newState;
   }
 
-  // 2️⃣ 단건 관심 여부 (✅ 그대로)
+  /** 단건 조회 */
   @Transactional(readOnly = true)
   public boolean isLiked(Long userId, Long reviewId) {
     if (userId == null) return false;
+
     return favoritePerformanceReviewRepository
         .existsByUser_UserIdAndPerformanceReview_PerformanceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (✅ 삭제된 리뷰 자동 제외 쿼리 사용)
+  /** ID 목록 */
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePerformanceReviewRepository.findPerformanceReviewIdsByUserId(userId);
   }
 
-  // ✅ 4️⃣ 마이페이지 상세 목록 (✅ 그대로)
+  /** 마이페이지 */
   @Transactional(readOnly = true)
   public List<FavoritePerformanceReviewResponseDto> getFavoriteReviews(Long userId) {
+
     userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 

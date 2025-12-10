@@ -2,6 +2,7 @@ package yegam.opale_be.domain.favorite.performance.entity;
 
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.user.entity.User;
@@ -24,6 +25,14 @@ public class FavoritePerformance extends BaseTimeEntity {
   @Builder.Default
   @Column(name = "is_liked", nullable = false)
   private Boolean isLiked = true;
+
+  @Builder.Default
+  @Column(name = "is_deleted")
+  private Boolean isDeleted = false;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false,

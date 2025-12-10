@@ -18,16 +18,22 @@ public interface FavoritePerformanceRepository extends JpaRepository<FavoritePer
 
   /** 마이페이지용: 좋아요한 Performance 엔티티 목록 */
   @Query("""
-   SELECT fp.performance 
+   SELECT fp.performance
    FROM FavoritePerformance fp
-   WHERE fp.user.userId = :userId 
+   WHERE fp.user.userId = :userId
      AND fp.isLiked = true
+     AND fp.isDeleted = false
    ORDER BY fp.createdAt DESC
 """)
   List<Performance> findLikedPerformancesByUserId(Long userId);
 
   /** 목록 페이지 하트 표시용: 좋아요한 performanceId 목록 */
-  @Query("SELECT fp.performance.performanceId FROM FavoritePerformance fp " +
-      "WHERE fp.user.userId = :userId AND fp.isLiked = true")
+  @Query("""
+      SELECT fp.performance.performanceId
+      FROM FavoritePerformance fp
+      WHERE fp.user.userId = :userId
+        AND fp.isLiked = true
+        AND fp.isDeleted = false
+      """)
   List<String> findLikedPerformanceIdsByUserId(Long userId);
 }

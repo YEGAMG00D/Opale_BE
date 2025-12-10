@@ -3,6 +3,7 @@ package yegam.opale_be.domain.favorite.review.entity;
 
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.*;
 import yegam.opale_be.domain.review.place.entity.PlaceReview;
 import yegam.opale_be.domain.user.entity.User;
@@ -25,6 +26,14 @@ public class FavoritePlaceReview extends BaseTimeEntity {
   @Builder.Default
   @Column(name = "is_liked", nullable = false)
   private Boolean isLiked = true;
+
+  @Builder.Default
+  @Column(name = "is_deleted")
+  private Boolean isDeleted = false;
+
+  @Column(name = "deleted_at")
+  private LocalDateTime deletedAt;
+
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "user_id", nullable = false,

@@ -29,12 +29,12 @@ public class FavoritePlaceReviewService {
   private final UserRepository userRepository;
   private final FavoritePlaceReviewMapper favoritePlaceReviewMapper;
 
-  // 1️⃣ 토글 (✅ 삭제된 리뷰 방어 추가)
+  /** ⭐ 토글 (soft delete 사용 안 함) */
   public boolean toggleFavorite(Long userId, Long placeReviewId) {
 
-    // ✅ 이미 삭제된 리뷰 방어
+    // 삭제된 리뷰 체크
     if (!placeReviewRepository.existsById(placeReviewId)) {
-      log.warn("⚠️ 삭제된 공연장 리뷰에 대한 관심 요청 차단: reviewId={}", placeReviewId);
+      log.warn("⚠️ 삭제된 공연장 리뷰 관심 요청 차단 reviewId={}", placeReviewId);
       return false;
     }
 
@@ -48,40 +48,57 @@ public class FavoritePlaceReviewService {
         .findByUser_UserIdAndPlaceReview_PlaceReviewId(userId, placeReviewId)
         .orElse(null);
 
+    // 신규 생성
     if (favorite == null) {
-      FavoritePlaceReview newFavorite = FavoritePlaceReview.builder()
-          .user(user)
-          .placeReview(review)
-          .isLiked(true)
-          .build();
-      favoritePlaceReviewRepository.save(newFavorite);
-      log.info("💖 공연장 리뷰 관심 등록: userId={}, reviewId={}", userId, placeReviewId);
+      favoritePlaceReviewRepository.save(
+          FavoritePlaceReview.builder()
+              .user(user)
+              .placeReview(review)
+              .isLiked(true)
+              .isDeleted(false)
+              .build()
+      );
+      log.info("💖 공연장 리뷰 관심 등록 userId={}, reviewId={}", userId, placeReviewId);
       return true;
     }
 
-    favorite.setIsLiked(!favorite.getIsLiked());
-    log.info("🔁 공연장 리뷰 관심 토글: userId={}, reviewId={}, now={}", userId, placeReviewId, favorite.getIsLiked());
-    return favorite.getIsLiked();
+    // soft delete → 복원
+    if (favorite.getIsDeleted()) {
+      favorite.setIsDeleted(false);
+      favorite.setDeletedAt(null);
+      favorite.setIsLiked(true);
+      log.info("♻️ 공연장 리뷰 soft-delete 복구 userId={}, reviewId={}", userId, placeReviewId);
+      return true;
+    }
+
+    // 일반 토글
+    boolean newState = !favorite.getIsLiked();
+    favorite.setIsLiked(newState);
+    log.info("🔁 공연장 리뷰 관심 토글 userId={}, reviewId={}, now={}", userId, placeReviewId, newState);
+
+    return newState;
   }
 
-  // 2️⃣ 단건 관심 여부 (✅ 그대로)
+  /** 단건 조회 */
   @Transactional(readOnly = true)
   public boolean isLiked(Long userId, Long reviewId) {
     if (userId == null) return false;
+
     return favoritePlaceReviewRepository
         .existsByUser_UserIdAndPlaceReview_PlaceReviewIdAndIsLikedTrue(userId, reviewId);
   }
 
-  // 3️⃣ ID 리스트 (✅ 삭제된 리뷰 자동 제외 쿼리 사용)
+  /** ID 목록 */
   @Transactional(readOnly = true)
   public List<Long> getFavoriteReviewIds(Long userId) {
     if (userId == null) return List.of();
     return favoritePlaceReviewRepository.findPlaceReviewIdsByUserId(userId);
   }
 
-  // ✅ 4️⃣ 마이페이지 상세 목록 (✅ 그대로)
+  /** 마이페이지 */
   @Transactional(readOnly = true)
   public List<FavoritePlaceReviewResponseDto> getFavoriteReviews(Long userId) {
+
     userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
 

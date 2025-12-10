@@ -17,19 +17,25 @@ public interface FavoritePerformanceReviewRepository extends JpaRepository<Favor
   boolean existsByUser_UserIdAndPerformanceReview_PerformanceReviewIdAndIsLikedTrue(Long userId, Long performanceReviewId);
 
   /** 마이페이지용: 좋아요한 PerformanceReview 엔티티 목록 */
-  @Query("SELECT fpr.performanceReview FROM FavoritePerformanceReview fpr " +
-      "WHERE fpr.user.userId = :userId AND fpr.isLiked = true")
+  @Query("""
+      SELECT fpr.performanceReview
+      FROM FavoritePerformanceReview fpr
+      WHERE fpr.user.userId = :userId
+        AND fpr.isLiked = true
+        AND fpr.isDeleted = false
+      """)
   List<PerformanceReview> findLikedPerformanceReviewsByUserId(Long userId);
 
   // ✅ 마이페이지용 (Favorite 기준)
   List<FavoritePerformanceReview> findByUser_UserIdAndIsLikedTrue(Long userId);
 
-  /** 목록/상세 하트 표시용: 좋아요한 performanceReviewId 목록 (✅ 삭제된 리뷰 자동 제외) */
+  /** 목록/상세 하트 표시용: 좋아요한 performanceReviewId 목록 */
   @Query("""
-      SELECT fpr.performanceReview.performanceReviewId 
+      SELECT fpr.performanceReview.performanceReviewId
       FROM FavoritePerformanceReview fpr
-      WHERE fpr.user.userId = :userId 
+      WHERE fpr.user.userId = :userId
         AND fpr.isLiked = true
+        AND fpr.isDeleted = false
         AND fpr.performanceReview IS NOT NULL
       """)
   List<Long> findPerformanceReviewIdsByUserId(Long userId);
