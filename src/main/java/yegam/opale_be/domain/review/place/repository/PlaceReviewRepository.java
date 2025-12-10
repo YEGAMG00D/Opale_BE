@@ -1,6 +1,7 @@
 package yegam.opale_be.domain.review.place.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,6 +14,9 @@ import java.util.Optional;
 @Repository
 public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> {
 
+  /** ⭐ Soft Delete 제외 + 단건 조회 */
+  Optional<PlaceReview> findByPlaceReviewIdAndIsDeletedFalse(Long reviewId);
+
   /** 공연장별 리뷰 목록 */
   @Query("""
       SELECT r FROM PlaceReview r
@@ -22,7 +26,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
   """)
   List<PlaceReview> findAllByPlaceId(@Param("placeId") String placeId);
 
-  /** 공연장별 + 리뷰타입별 리뷰 목록 */
+  /** 공연장 + 타입 필터링 */
   @Query("""
       SELECT r FROM PlaceReview r
       WHERE r.place.placeId = :placeId
@@ -35,7 +39,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
       @Param("reviewType") ReviewType reviewType
   );
 
-  /** 작성한 본인 공연장 리뷰 목록 */
+  /** 유저별 리뷰 목록 */
   @Query("""
       SELECT r FROM PlaceReview r
       WHERE r.user.userId = :userId
@@ -44,7 +48,6 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
   """)
   List<PlaceReview> findAllByUserId(@Param("userId") Long userId);
 
-  /** 작성한 본인 + 리뷰타입별 목록 */
   @Query("""
       SELECT r FROM PlaceReview r
       WHERE r.user.userId = :userId
@@ -57,7 +60,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
       @Param("reviewType") ReviewType reviewType
   );
 
-  /** 공연장 평균 평점 */
+  /** 전체 평균 평점 */
   @Query("""
       SELECT AVG(r.rating)
       FROM PlaceReview r
@@ -67,7 +70,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
   """)
   Double calculateAverageRating(@Param("placeId") String placeId);
 
-  /** 공연장 리뷰 개수 (특정 타입만) */
+  /** 타입별 리뷰 개수 */
   @Query("""
       SELECT COUNT(r)
       FROM PlaceReview r
@@ -80,7 +83,7 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
       @Param("reviewType") ReviewType reviewType
   );
 
-  /** 공연장 평균 평점 (특정 타입만) */
+  /** 타입별 평균 평점 */
   @Query("""
       SELECT AVG(r.rating)
       FROM PlaceReview r
@@ -96,7 +99,15 @@ public interface PlaceReviewRepository extends JpaRepository<PlaceReview, Long> 
 
   Optional<PlaceReview> findByTicket_TicketId(Long ticketId);
 
-
   void deleteByTicket_TicketId(Long ticketId);
 
+  /** Soft Delete */
+  @Modifying
+  @Query("""
+      UPDATE PlaceReview r
+      SET r.isDeleted = true,
+          r.deletedAt = CURRENT_TIMESTAMP
+      WHERE r.placeReviewId = :reviewId
+  """)
+  void softDelete(@Param("reviewId") Long reviewId);
 }

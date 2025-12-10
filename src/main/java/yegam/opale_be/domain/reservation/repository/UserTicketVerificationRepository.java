@@ -11,16 +11,32 @@ import java.util.Optional;
 @Repository
 public interface UserTicketVerificationRepository extends JpaRepository<UserTicketVerification, Long> {
 
+  /** 1) 단일 조회 (Service가 그대로 호출하도록 유지) */
   Optional<UserTicketVerification> findByTicketIdAndUser_UserId(Long ticketId, Long userId);
 
-  Page<UserTicketVerification> findAllByUser_UserIdOrderByRequestedAtDesc(Long userId, Pageable pageable);
+  /** 2) Soft Delete 적용 단일 조회 */
+  Optional<UserTicketVerification> findByTicketIdAndUser_UserIdAndIsDeletedFalse(Long ticketId, Long userId);
 
-  Optional<UserTicketVerification> findFirstByUser_UserIdAndPerformance_PerformanceId(
-      Long userId, String performanceId);
+  /** 3) Soft Delete 제외 + 최신순 목록 조회 */
+  Page<UserTicketVerification> findByUser_UserIdAndIsDeletedFalseOrderByRequestedAtDesc(
+      Long userId, Pageable pageable);
 
-  Optional<UserTicketVerification> findFirstByUser_UserIdAndPlace_PlaceId(
-      Long userId, String placeId);
+  /** 4) 서비스에서 사용하는 alias 메서드 */
+  default Page<UserTicketVerification> findAllActiveByUser(Long userId, Pageable pageable) {
+    return findByUser_UserIdAndIsDeletedFalseOrderByRequestedAtDesc(userId, pageable);
+  }
 
+  /** 5) 공연 리뷰 작성 가능 티켓 (Soft Delete 제외 + 최신순 1개) */
+  Optional<UserTicketVerification>
+  findTop1ByUser_UserIdAndPerformance_PerformanceIdAndIsDeletedFalseOrderByRequestedAtDesc(
+      Long userId,
+      String performanceId
+  );
 
-
+  /** 6) 공연장 리뷰 작성 가능 티켓 (Soft Delete 제외 + 최신순 1개) */
+  Optional<UserTicketVerification>
+  findTop1ByUser_UserIdAndPlace_PlaceIdAndIsDeletedFalseOrderByRequestedAtDesc(
+      Long userId,
+      String placeId
+  );
 }

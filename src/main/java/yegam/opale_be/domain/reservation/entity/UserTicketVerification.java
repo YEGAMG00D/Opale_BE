@@ -51,6 +51,7 @@ public class UserTicketVerification {
   @Column(name = "place_name", length = 100)
   private String placeName; // 공연장 명
 
+  @Builder.Default
   @Column(name = "is_deleted")
   private Boolean isDeleted = false;
 

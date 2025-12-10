@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import yegam.opale_be.domain.culture.performance.entity.Performance;
 import yegam.opale_be.domain.culture.performance.repository.PerformanceRepository;
+import yegam.opale_be.domain.favorite.review.repository.FavoritePerformanceReviewRepository;
+import yegam.opale_be.domain.favorite.review.repository.FavoritePlaceReviewRepository;
 import yegam.opale_be.domain.place.entity.Place;
 import yegam.opale_be.domain.place.repository.PlaceRepository;
 import yegam.opale_be.domain.reservation.dto.request.TicketCreateRequestDto;
@@ -52,6 +54,8 @@ public class ReservationService {
 
   private final PerformanceReviewRepository performanceReviewRepository;
   private final PlaceReviewRepository placeReviewRepository;
+  private final FavoritePerformanceReviewRepository favoritePerformanceReviewRepository;
+  private final FavoritePlaceReviewRepository favoritePlaceReviewRepository;
 
   private final PerformanceReviewMapper performanceReviewMapper;
   private final PlaceReviewMapper placeReviewMapper;
@@ -177,7 +181,7 @@ public class ReservationService {
   }
 
 
-  /** 티켓 삭제 */
+  /** 티켓 삭제 (Soft Delete) */
   @Transactional
   public void deleteTicket(Long userId, Long ticketId) {
 
@@ -185,17 +189,39 @@ public class ReservationService {
         ticketRepository.findByTicketIdAndUser_UserId(ticketId, userId)
             .orElseThrow(() -> new CustomException(ReservationErrorCode.TICKET_NOT_FOUND));
 
-    // ✅ 1. 공연 리뷰 물리 삭제 (FK 먼저 제거)
-    performanceReviewRepository.deleteByTicket_TicketId(ticketId);
+    // ✅ 티켓 소프트 딜리트
+    ticket.setIsDeleted(true);
+    ticket.setDeletedAt(LocalDateTime.now());
 
-    // ✅ 2. 공연장 리뷰 물리 삭제 (FK 먼저 제거)
-    placeReviewRepository.deleteByTicket_TicketId(ticketId);
+    Long tid = ticket.getTicketId();
 
-    // ✅ 3. 마지막에 티켓 삭제
-    ticketRepository.delete(ticket);
+    /* ================================
+       1) 공연 후기 Soft Delete
+    ================================ */
+    performanceReviewRepository.findByTicket_TicketId(tid)
+        .ifPresent(review -> {
+          review.setIsDeleted(true);
+          review.setDeletedAt(LocalDateTime.now());
 
-    log.info("🗑️ 티켓 + 연결 리뷰 전부 삭제 완료: ticketId={}, userId={}", ticketId, userId);
+          // ⭐ 공연 후기 좋아요도 Soft Delete
+          favoritePerformanceReviewRepository.softDeleteByReviewId(review.getPerformanceReviewId());
+        });
+
+    /* ================================
+       2) 공연장 리뷰 Soft Delete
+    ================================ */
+    placeReviewRepository.findByTicket_TicketId(tid)
+        .ifPresent(review -> {
+          review.setIsDeleted(true);
+          review.setDeletedAt(LocalDateTime.now());
+
+          // ⭐ 공연장 리뷰 좋아요도 Soft Delete
+          favoritePlaceReviewRepository.softDeleteByReviewId(review.getPlaceReviewId());
+        });
+
+    log.info("🗑️ 티켓 및 연관 리뷰 soft delete 완료: ticketId={}, userId={}", ticketId, userId);
   }
+
 
 
   /** 단일 조회 */
@@ -214,7 +240,7 @@ public class ReservationService {
     PageRequest pageable = PageRequest.of(page - 1, size);
 
     Page<UserTicketVerification> ticketPage =
-        ticketRepository.findAllByUser_UserIdOrderByRequestedAtDesc(userId, pageable);
+        ticketRepository.findAllActiveByUser(userId, pageable);
 
     List<TicketSimpleResponseDto> tickets =
         reservationMapper.toSimpleResponseDtoList(ticketPage.getContent());
@@ -237,7 +263,7 @@ public class ReservationService {
     PageRequest pageable = PageRequest.of(page - 1, size);
 
     Page<UserTicketVerification> ticketPage =
-        ticketRepository.findAllByUser_UserIdOrderByRequestedAtDesc(userId, pageable);
+        ticketRepository.findAllActiveByUser(userId, pageable);
 
     return reservationMapper.toDetailListResponseDto(ticketPage, page, size);
   }

@@ -40,9 +40,11 @@ public class PlaceReviewService {
   /** 단건 조회 */
   @Transactional(readOnly = true)
   public PlaceReviewResponseDto getReview(Long reviewId) {
-    PlaceReview review = reviewRepository.findById(reviewId)
-        .filter(r -> !r.getIsDeleted())
+
+    PlaceReview review = reviewRepository
+        .findByPlaceReviewIdAndIsDeletedFalse(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
+
     return reviewMapper.toResponseDto(review);
   }
 
@@ -90,6 +92,7 @@ public class PlaceReviewService {
 
   /** 리뷰 작성 */
   public PlaceReviewResponseDto createReview(Long userId, PlaceReviewRequestDto dto) {
+
     User user = userRepository.findById(userId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_ACCESS_DENIED));
 
@@ -97,7 +100,10 @@ public class PlaceReviewService {
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.PLACE_NOT_FOUND));
 
     UserTicketVerification ticket = ticketRepository
-        .findFirstByUser_UserIdAndPlace_PlaceId(userId, dto.getPlaceId())
+        .findTop1ByUser_UserIdAndPlace_PlaceIdAndIsDeletedFalseOrderByRequestedAtDesc(
+            userId,
+            dto.getPlaceId()
+        )
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.TICKET_REQUIRED));
 
     PlaceReview review = PlaceReview.builder()
@@ -120,7 +126,8 @@ public class PlaceReviewService {
   /** 리뷰 수정 */
   public PlaceReviewResponseDto updateReview(Long userId, Long reviewId, PlaceReviewRequestDto dto) {
 
-    PlaceReview review = reviewRepository.findById(reviewId)
+    PlaceReview review = reviewRepository
+        .findByPlaceReviewIdAndIsDeletedFalse(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
 
     if (!review.getUser().getUserId().equals(userId)) {
@@ -140,7 +147,8 @@ public class PlaceReviewService {
   /** 리뷰 삭제 (Soft Delete) */
   public void deleteReview(Long userId, Long reviewId) {
 
-    PlaceReview review = reviewRepository.findById(reviewId)
+    PlaceReview review = reviewRepository
+        .findByPlaceReviewIdAndIsDeletedFalse(reviewId)
         .orElseThrow(() -> new CustomException(PlaceReviewErrorCode.REVIEW_NOT_FOUND));
 
     if (!review.getUser().getUserId().equals(userId)) {
@@ -149,18 +157,14 @@ public class PlaceReviewService {
 
     String placeId = review.getPlace().getPlaceId();
 
-    // ⭐ 1) 공연장 리뷰 관심 Soft Delete
     favoritePlaceReviewRepository.softDeleteByReviewId(reviewId);
 
-    // ⭐ 2) 리뷰 Soft Delete
     review.setIsDeleted(true);
     review.setDeletedAt(LocalDateTime.now());
 
     updatePlaceAverageRating(placeId);
   }
 
-
-  /** 평균 평점 갱신 */
   private void updatePlaceAverageRating(String placeId) {
     Double avg = reviewRepository.calculateAverageRating(placeId);
     Place place = placeRepository.findById(placeId)
