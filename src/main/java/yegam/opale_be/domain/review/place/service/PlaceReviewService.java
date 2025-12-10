@@ -137,7 +137,7 @@ public class PlaceReviewService {
     return reviewMapper.toResponseDto(review);
   }
 
-  /** ✅ ✅ ✅ 리뷰 삭제 (물리 삭제로 변경) */
+  /** 리뷰 삭제 (Soft Delete) */
   public void deleteReview(Long userId, Long reviewId) {
 
     PlaceReview review = reviewRepository.findById(reviewId)
@@ -149,13 +149,16 @@ public class PlaceReviewService {
 
     String placeId = review.getPlace().getPlaceId();
 
-    favoritePlaceReviewRepository
-        .deleteByPlaceReview_PlaceReviewId(reviewId);
+    // ⭐ 1) 공연장 리뷰 관심 Soft Delete
+    favoritePlaceReviewRepository.softDeleteByReviewId(reviewId);
 
-    reviewRepository.delete(review);   // ✅ 물리 삭제
+    // ⭐ 2) 리뷰 Soft Delete
+    review.setIsDeleted(true);
+    review.setDeletedAt(LocalDateTime.now());
 
     updatePlaceAverageRating(placeId);
   }
+
 
   /** 평균 평점 갱신 */
   private void updatePlaceAverageRating(String placeId) {

@@ -206,7 +206,7 @@ public class PerformanceReviewService {
 
 
 
-  /** ✅ 리뷰 삭제 (물리 삭제) */
+  /** 리뷰 삭제 (Soft Delete) */
   public void deleteReview(Long userId, Long reviewId) {
 
     PerformanceReview review = reviewRepository.findById(reviewId)
@@ -218,15 +218,16 @@ public class PerformanceReviewService {
 
     String performanceId = review.getPerformance().getPerformanceId();
 
-    // ✅ 1. 이 리뷰에 달린 모든 관심 먼저 물리 삭제
-    favoritePerformanceReviewRepository
-        .deleteByPerformanceReview_PerformanceReviewId(reviewId);
+    // ⭐ 1) 리뷰 관심 Soft Delete
+    favoritePerformanceReviewRepository.softDeleteByReviewId(reviewId);
 
-    // ✅ 2. 리뷰 물리 삭제
-    reviewRepository.delete(review);
+    // ⭐ 2) 리뷰 Soft Delete
+    review.setIsDeleted(true);
+    review.setDeletedAt(LocalDateTime.now());
 
     updatePerformanceAverageRating(performanceId);
   }
+
 
 
   /** 평균 갱신 */
